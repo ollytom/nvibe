@@ -8,7 +8,6 @@ from rich import print as rprint
 from rich.console import Console
 import tomli_w
 
-from vibe import __version__
 from vibe.cli.textual_ui.app import StartupOptions, run_textual_ui
 from vibe.core.agent_loop import AgentLoop, TeleportError
 from vibe.core.agents.models import BuiltinAgentName
@@ -24,22 +23,11 @@ from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
 from vibe.core.programmatic import run_programmatic
 from vibe.core.session.session_loader import SessionLoader
-from vibe.core.telemetry.build_metadata import build_entrypoint_metadata
-from vibe.core.telemetry.types import EntrypointMetadata
 from vibe.core.tracing import setup_tracing
 from vibe.core.trusted_folders import find_trustable_files, trusted_folders_manager
 from vibe.core.types import LLMMessage, OutputFormat, Role
 from vibe.core.utils import ConversationLimitException
 from vibe.setup.onboarding import run_onboarding
-
-
-def _build_cli_entrypoint_metadata() -> EntrypointMetadata:
-    return build_entrypoint_metadata(
-        agent_entrypoint="cli",
-        agent_version=__version__,
-        client_name="vibe_cli",
-        client_version=__version__,
-    )
 
 
 def get_initial_agent_name(args: argparse.Namespace) -> str:
@@ -74,7 +62,7 @@ def load_config_or_exit(*, interactive: bool) -> VibeConfig:
                 file=sys.stderr,
             )
             sys.exit(1)
-        run_onboarding(entrypoint_metadata=_build_cli_entrypoint_metadata())
+        run_onboarding()
         return VibeConfig.load()
     except MissingPromptFileError as e:
         rprint(f"[yellow]Invalid system prompt id: {e}[/]")
@@ -192,7 +180,7 @@ def run_cli(args: argparse.Namespace) -> None:
     bootstrap_config_files()
 
     if args.setup:
-        run_onboarding(entrypoint_metadata=_build_cli_entrypoint_metadata())
+        run_onboarding()
         sys.exit(0)
 
     try:
@@ -251,7 +239,7 @@ def run_cli(args: argparse.Namespace) -> None:
                 config,
                 agent_name=initial_agent_name,
                 enable_streaming=True,
-                entrypoint_metadata=_build_cli_entrypoint_metadata(),
+
                 defer_heavy_init=True,
                 hook_config_result=hook_config_result,
             )

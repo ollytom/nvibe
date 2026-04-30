@@ -32,10 +32,8 @@ def _patch_probability(value: float):
 
 def _make_agent_loop(
     user_message_count: int = MIN_USER_MESSAGES_FOR_FEEDBACK,
-    telemetry_active: bool = True,
 ) -> MagicMock:
     loop = MagicMock()
-    loop.telemetry_client.is_active.return_value = telemetry_active
     messages = [
         LLMMessage(role=Role.user, content=f"msg {i}")
         for i in range(user_message_count)
@@ -99,12 +97,7 @@ class TestShouldShow:
         ):
             assert manager.should_show(_make_agent_loop()) is True
 
-    def test_does_not_show_when_telemetry_inactive(self, tmp_path: Path) -> None:
-        manager = FeedbackBarManager()
-        with _patch_cache_file(tmp_path), _patch_probability(0.2):
-            assert (
-                manager.should_show(_make_agent_loop(telemetry_active=False)) is False
-            )
+
 
     def test_does_not_show_when_too_few_user_messages(self, tmp_path: Path) -> None:
         manager = FeedbackBarManager()

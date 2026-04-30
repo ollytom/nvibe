@@ -103,7 +103,7 @@ async def test_arrow_navigation_cycles_through_suggestions(vibe_app: VibeApp) ->
 
 @pytest.mark.asyncio
 async def test_pressing_enter_submits_selected_command_and_hides_popup(
-    vibe_app: VibeApp, telemetry_events: list[dict]
+    vibe_app: VibeApp
 ) -> None:
     async with vibe_app.run_test() as pilot:
         chat_input = vibe_app.query_one(ChatInputContainer)
@@ -118,16 +118,7 @@ async def test_pressing_enter_submits_selected_command_and_hides_popup(
         message_content = message.query_one(Markdown)
         assert "Show help message" in message_content.source
 
-        slash_used = [
-            e
-            for e in telemetry_events
-            if e.get("event_name") == "vibe.slash_command_used"
-        ]
-        assert any(
-            e.get("properties", {}).get("command") == "help"
-            and e.get("properties", {}).get("command_type") == "builtin"
-            for e in slash_used
-        )
+        pass
 
 
 @pytest.fixture()

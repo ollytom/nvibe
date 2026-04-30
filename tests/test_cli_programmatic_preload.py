@@ -25,7 +25,7 @@ class SpyStreamingFormatter:
 
 
 def test_run_programmatic_preload_streaming_is_batched(
-    monkeypatch: pytest.MonkeyPatch, telemetry_events: list[dict]
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     spy = SpyStreamingFormatter()
     monkeypatch.setattr(
@@ -77,12 +77,6 @@ def test_run_programmatic_preload_streaming_is_batched(
             Role.assistant,
         ]
 
-        new_session = [
-            e for e in telemetry_events if e.get("event_name") == "vibe.new_session"
-        ]
-        assert len(new_session) == 1
-        assert new_session[0]["properties"]["entrypoint"] == "programmatic"
-        assert "version" in new_session[0]["properties"]
 
         assert (
             spy.emitted[0][1] == "You are Vibe, a super useful programming assistant."

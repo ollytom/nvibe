@@ -13,11 +13,8 @@ from textual.widgets import Input, Link, Static
 
 from vibe.cli.clipboard import copy_selection_to_clipboard
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from vibe.core.config import DEFAULT_PROVIDERS, ProviderConfig, VibeConfig
+from vibe.core.config import DEFAULT_PROVIDERS, ProviderConfig
 from vibe.core.paths import GLOBAL_ENV_FILE
-from vibe.core.telemetry.send import TelemetryClient
-from vibe.core.telemetry.types import EntrypointMetadata
-from vibe.core.types import Backend
 from vibe.setup.onboarding.base import OnboardingScreen
 from vibe.setup.onboarding.context import OnboardingContext
 
@@ -37,8 +34,6 @@ def _save_api_key_to_env_file(env_key: str, api_key: str) -> None:
 def persist_api_key(
     provider: ProviderConfig,
     api_key: str,
-    *,
-    entrypoint_metadata: EntrypointMetadata | None = None,
 ) -> str:
     env_key = provider.api_key_env_var
     if not env_key:
@@ -51,15 +46,6 @@ def persist_api_key(
         _save_api_key_to_env_file(env_key, api_key)
     except (OSError, ValueError) as err:
         return f"save_error:{err}"
-    if provider.backend == Backend.MISTRAL:
-        try:
-            telemetry = TelemetryClient(
-                config_getter=VibeConfig,
-                entrypoint_metadata_getter=lambda: entrypoint_metadata,
-            )
-            telemetry.send_onboarding_api_key_added()
-        except Exception:
-            pass
     return "completed"
 
 
@@ -89,12 +75,9 @@ class ApiKeyScreen(OnboardingScreen):
     def __init__(
         self,
         provider: ProviderConfig | None = None,
-        *,
-        entrypoint_metadata: EntrypointMetadata | None = None,
     ) -> None:
         super().__init__()
         self.provider = _resolve_onboarding_provider(provider)
-        self._entrypoint_metadata = entrypoint_metadata
 
     def _compose_provider_link(self, provider_name: str) -> ComposeResult:
         if self.provider.name not in PROVIDER_HELP:
@@ -175,9 +158,7 @@ class ApiKeyScreen(OnboardingScreen):
 
     def _save_and_finish(self, api_key: str) -> None:
         self.app.exit(
-            persist_api_key(
-                self.provider, api_key, entrypoint_metadata=self._entrypoint_metadata
-            )
+            persist_api_key(self.provider, api_key)
         )
 
     def on_mouse_up(self, event: MouseUp) -> None:

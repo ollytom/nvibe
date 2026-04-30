@@ -41,17 +41,12 @@ def acp_agent_loop(backend) -> VibeAcpAgentLoop:
 class TestACPNewSession:
     @pytest.mark.asyncio
     async def test_new_session_response_structure(
-        self, acp_agent_loop: VibeAcpAgentLoop, telemetry_events: list[dict]
+        self, acp_agent_loop: VibeAcpAgentLoop
     ) -> None:
         session_response = await acp_agent_loop.new_session(
             cwd=str(Path.cwd()), mcp_servers=[]
         )
 
-        new_session_events = [
-            e for e in telemetry_events if e.get("event_name") == "vibe.new_session"
-        ]
-        assert len(new_session_events) == 1
-        assert new_session_events[0]["properties"]["entrypoint"] == "acp"
 
         assert session_response.session_id is not None
         acp_session = next(

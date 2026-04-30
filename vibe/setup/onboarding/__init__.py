@@ -7,33 +7,27 @@ from rich import print as rprint
 from textual.app import App
 
 from vibe.core.paths import GLOBAL_ENV_FILE
-from vibe.core.telemetry.types import EntrypointMetadata
 from vibe.setup.onboarding.screens import ApiKeyScreen, WelcomeScreen
 
 
 class OnboardingApp(App[str | None]):
     CSS_PATH = "onboarding.tcss"
 
-    def __init__(
-        self, entrypoint_metadata: EntrypointMetadata | None = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._entrypoint_metadata = entrypoint_metadata
 
     def on_mount(self) -> None:
         self.theme = "textual-ansi"
 
         self.install_screen(WelcomeScreen(), "welcome")
         self.install_screen(
-            ApiKeyScreen(entrypoint_metadata=self._entrypoint_metadata), "api_key"
+            ApiKeyScreen(), "api_key"
         )
         self.push_screen("welcome")
 
 
-def run_onboarding(
-    app: App | None = None, *, entrypoint_metadata: EntrypointMetadata | None = None
-) -> None:
-    result = (app or OnboardingApp(entrypoint_metadata=entrypoint_metadata)).run()
+def run_onboarding(app: App | None = None) -> None:
+    result = (app or OnboardingApp()).run()
     match result:
         case None:
             rprint("\n[yellow]Setup cancelled. See you next time![/]")

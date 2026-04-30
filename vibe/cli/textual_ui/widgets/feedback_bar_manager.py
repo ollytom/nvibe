@@ -19,9 +19,6 @@ class FeedbackBarManager:
     """Decides whether to show the feedback bar and records when feedback is given."""
 
     def should_show(self, agent_loop: AgentLoop) -> bool:
-        if not agent_loop.telemetry_client.is_active():
-            return False
-
         if not agent_loop.config.is_active_model_mistral():
             return False
 

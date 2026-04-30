@@ -163,29 +163,6 @@ def _disable_feedback_bar(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest.fixture(autouse=True)
-def telemetry_events(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
-    events: list[dict[str, Any]] = []
-
-    def record_telemetry(
-        self: Any,
-        event_name: str,
-        properties: dict[str, Any],
-        *,
-        correlation_id: str | None = None,
-    ) -> None:
-        event: dict[str, Any] = {"event_name": event_name, "properties": properties}
-        if correlation_id is not None:
-            event["correlation_id"] = correlation_id
-        events.append(event)
-
-    monkeypatch.setattr(
-        "vibe.core.telemetry.send.TelemetryClient.send_telemetry_event",
-        record_telemetry,
-    )
-    return events
-
-
 @pytest.fixture
 def vibe_app() -> VibeApp:
     return build_test_vibe_app()

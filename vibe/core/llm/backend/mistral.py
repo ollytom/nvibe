@@ -259,7 +259,6 @@ class MistralBackend:
         max_tokens: int | None,
         tool_choice: StrToolChoice | AvailableTool | None,
         extra_headers: dict[str, str] | None,
-        metadata: dict[str, str] | None = None,
     ) -> LLMChunk:
         try:
             merged_messages = merge_consecutive_user_messages(messages)
@@ -279,7 +278,7 @@ class MistralBackend:
                 if tool_choice
                 else None,
                 http_headers=extra_headers,
-                metadata=metadata,
+
                 stream=False,
                 reasoning_effort=reasoning_effort,
             )
@@ -338,7 +337,6 @@ class MistralBackend:
         max_tokens: int | None,
         tool_choice: StrToolChoice | AvailableTool | None,
         extra_headers: dict[str, str] | None,
-        metadata: dict[str, str] | None = None,
     ) -> AsyncGenerator[LLMChunk, None]:
         try:
             merged_messages = merge_consecutive_user_messages(messages)
@@ -358,7 +356,7 @@ class MistralBackend:
                 if tool_choice
                 else None,
                 http_headers=extra_headers,
-                metadata=metadata,
+
                 reasoning_effort=reasoning_effort,
             )
             correlation_id = stream.response.headers.get("mistral-correlation-id")
@@ -422,7 +420,6 @@ class MistralBackend:
         tools: list[AvailableTool] | None = None,
         tool_choice: StrToolChoice | AvailableTool | None = None,
         extra_headers: dict[str, str] | None = None,
-        metadata: dict[str, str] | None = None,
     ) -> int:
         result = await self.complete(
             model=model,
@@ -432,7 +429,6 @@ class MistralBackend:
             max_tokens=1,
             tool_choice=tool_choice,
             extra_headers=extra_headers,
-            metadata=metadata,
         )
         if result.usage is None:
             raise ValueError("Missing usage in non streaming completion")

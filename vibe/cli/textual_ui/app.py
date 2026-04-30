@@ -497,7 +497,7 @@ class VibeApp(App):  # noqa: PLR0904
         await self._resume_history_from_messages()
         await self._check_and_show_whats_new()
         self._schedule_update_notification()
-        self.agent_loop.emit_new_session_telemetry()
+
 
         self.call_after_refresh(self._refresh_banner)
         self._show_hook_config_issues_once()
@@ -664,9 +664,7 @@ class VibeApp(App):  # noqa: PLR0904
     def on_feedback_bar_feedback_given(
         self, message: FeedbackBar.FeedbackGiven
     ) -> None:
-        self.agent_loop.telemetry_client.send_user_rating_feedback(
-            rating=message.rating, model=self.config.active_model
-        )
+        pass
 
     async def _remove_loading_widget(self) -> None:
         if self._loading_widget and self._loading_widget.parent:
@@ -747,9 +745,7 @@ class VibeApp(App):  # noqa: PLR0904
             desired = changes["voice_mode_enabled"]
             if current != desired:
                 self._voice_manager.toggle_voice_mode()
-                self.agent_loop.telemetry_client.send_telemetry_event(
-                    "vibe.voice_mode_toggled", {"enabled": desired}
-                )
+                pass
                 self.agent_loop.refresh_config()
                 if desired:
                     await self._mount_and_scroll(
@@ -870,9 +866,7 @@ class VibeApp(App):  # noqa: PLR0904
     async def _handle_command(self, user_input: str) -> bool:
         if resolved := self.commands.parse_command(user_input):
             cmd_name, command, cmd_args = resolved
-            self.agent_loop.telemetry_client.send_slash_command_used(
-                cmd_name, "builtin"
-            )
+            pass
             await self._mount_and_scroll(UserMessage(user_input))
             handler = getattr(self, command.handler)
             if asyncio.iscoroutinefunction(handler):
@@ -900,7 +894,7 @@ class VibeApp(App):  # noqa: PLR0904
         if skill is None:
             return False
 
-        self.agent_loop.telemetry_client.send_slash_command_used(skill.name, "skill")
+        pass
         prompt = SkillManager.build_skill_prompt(user_input, skill)
         await self._handle_user_message(prompt)
         return True
@@ -1470,7 +1464,7 @@ class VibeApp(App):  # noqa: PLR0904
             self, content, success_message="Last agent message copied to clipboard"
         )
         if copied_text is not None:
-            self.agent_loop.telemetry_client.send_user_copied_text(copied_text)
+            pass
 
     async def _refresh_mcp_browser(self) -> str:
         await self.agent_loop.tool_manager.refresh_remote_tools_async()
@@ -1954,7 +1948,6 @@ class VibeApp(App):  # noqa: PLR0904
             lambda: self.config,
             audio_recorder=AudioRecorder(),
             transcribe_client=transcribe_client,
-            telemetry_client=self.agent_loop.telemetry_client,
         )
 
     async def _show_voice_settings(self, **kwargs: Any) -> None:
@@ -2115,7 +2108,7 @@ class VibeApp(App):  # noqa: PLR0904
             approval_app.action_reject()
         except Exception:
             pass
-        self.agent_loop.telemetry_client.send_user_cancelled_action("reject_approval")
+        pass
         self._last_escape_time = None
 
     def _handle_question_app_escape(self) -> None:
@@ -2124,7 +2117,7 @@ class VibeApp(App):  # noqa: PLR0904
             question_app.action_cancel()
         except Exception:
             pass
-        self.agent_loop.telemetry_client.send_user_cancelled_action("cancel_question")
+        pass
         self._last_escape_time = None
 
     def _handle_model_picker_app_escape(self) -> None:
@@ -2356,7 +2349,7 @@ class VibeApp(App):  # noqa: PLR0904
         self._last_escape_time = None
 
     def _handle_agent_running_escape(self) -> None:
-        self.agent_loop.telemetry_client.send_user_cancelled_action("interrupt_agent")
+        pass
         self.run_worker(self._interrupt_agent_loop(), exclusive=False)
 
     def _handle_bottom_app_close_escape(
@@ -2775,13 +2768,13 @@ class VibeApp(App):  # noqa: PLR0904
     def action_copy_selection(self) -> None:
         copied_text = copy_selection_to_clipboard(self, show_toast=False)
         if copied_text is not None:
-            self.agent_loop.telemetry_client.send_user_copied_text(copied_text)
+            pass
 
     def on_mouse_up(self, event: MouseUp) -> None:
         if self.config.autocopy_to_clipboard:
             copied_text = copy_selection_to_clipboard(self, show_toast=True)
             if copied_text is not None:
-                self.agent_loop.telemetry_client.send_user_copied_text(copied_text)
+                pass
 
     def on_app_blur(self, event: AppBlur) -> None:
         self._terminal_notifier.on_blur()
@@ -2811,7 +2804,6 @@ class VibeApp(App):  # noqa: PLR0904
         return NarratorManager(
             config_getter=lambda: self.config,
             audio_player=AudioPlayer(),
-            telemetry_client=self.agent_loop.telemetry_client,
         )
 
 

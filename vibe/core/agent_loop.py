@@ -9,7 +9,6 @@ from functools import wraps
 from http import HTTPStatus
 import inspect
 import os
-from pathlib import Path
 import threading
 from threading import Thread
 import time
@@ -19,7 +18,6 @@ from uuid import uuid4
 from opentelemetry import trace
 from pydantic import BaseModel
 
-from vibe.cli.terminal_detect import detect_terminal
 from vibe.core.agents.manager import AgentManager
 from vibe.core.agents.models import AgentProfile, BuiltinAgentName
 from vibe.core.config import ModelConfig, ProviderConfig, VibeConfig
@@ -59,13 +57,6 @@ from vibe.core.session.session_logger import SessionLogger
 from vibe.core.session.session_migration import migrate_sessions_entrypoint
 from vibe.core.skills.manager import SkillManager
 from vibe.core.system_prompt import get_universal_system_prompt
-from vibe.core.telemetry.build_metadata import build_request_metadata
-from vibe.core.telemetry.send import TelemetryClient
-from vibe.core.telemetry.types import (
-    EntrypointMetadata,
-    TelemetryCallType,
-    TelemetryRequestMetadata,
-)
 from vibe.core.tools.base import (
     BaseTool,
     InvokeContext,
@@ -84,7 +75,6 @@ from vibe.core.tools.permissions import (
 )
 from vibe.core.tools.utils import wildcard_match
 from vibe.core.tracing import agent_span, set_tool_result, tool_span
-from vibe.core.trusted_folders import has_agents_md_file
 from vibe.core.types import (
     AgentProfileChangedEvent,
     AgentStats,
@@ -210,7 +200,7 @@ class AgentLoop:
         max_price: float | None = None,
         backend: BackendLike | None = None,
         enable_streaming: bool = False,
-        entrypoint_metadata: EntrypointMetadata | None = None,
+        entrypoint_metadata: dict[str, str] | None = None,
         is_subagent: bool = False,
         defer_heavy_init: bool = False,
         headless: bool = False,
@@ -252,9 +242,6 @@ class AgentLoop:
         self._sampling_handler = MCPSamplingHandler(
             backend_getter=lambda: self.backend,
             config_getter=lambda: self.config,
-            metadata_getter=lambda: self._build_backend_metadata(
-                call_type="secondary_call"
-            ).model_dump(exclude_none=True),
             extra_headers_getter=self._get_extra_headers,
         )
 
@@ -298,12 +285,6 @@ class AgentLoop:
         self._session_rules: list[ApprovedRule] = []
         self._approval_lock = asyncio.Lock()
 
-        self.telemetry_client = TelemetryClient(
-            config_getter=lambda: self.config,
-            session_id_getter=lambda: self.session_id,
-            parent_session_id_getter=lambda: self.parent_session_id,
-            entrypoint_metadata_getter=lambda: self.entrypoint_metadata,
-        )
         self.session_logger = SessionLogger(config.session_logging, self.session_id)
         self._hook_config_result = hook_config_result
         self._hooks_manager = (
@@ -382,8 +363,7 @@ class AgentLoop:
         if err := self._init_error:
             raise copy.copy(err).with_traceback(err.__traceback__)
         if self._init_duration_ms is not None:
-            duration, self._init_duration_ms = self._init_duration_ms, None
-            self.emit_ready_telemetry(duration)
+            self._init_duration_ms = None
 
     @property
     def agent_profile(self) -> AgentProfile:
@@ -455,43 +435,6 @@ class AgentLoop:
             self.set_tool_permission(
                 tool_name, ToolPermission.ALWAYS, save_permanently=save_permanently
             )
-
-    def emit_new_session_telemetry(self) -> None:
-        entrypoint = (
-            self.entrypoint_metadata.agent_entrypoint
-            if self.entrypoint_metadata
-            else "unknown"
-        )
-        client_name = (
-            self.entrypoint_metadata.client_name if self.entrypoint_metadata else None
-        )
-        client_version = (
-            self.entrypoint_metadata.client_version
-            if self.entrypoint_metadata
-            else None
-        )
-        has_agents_md = has_agents_md_file(Path.cwd())
-        nb_skills = len(self.skill_manager.available_skills)
-        nb_mcp_servers = len(self.config.mcp_servers)
-        nb_models = len(self.config.models)
-
-        terminal_emulator = None
-        if entrypoint == "cli":
-            terminal_emulator = detect_terminal().value
-
-        self.telemetry_client.send_new_session(
-            has_agents_md=has_agents_md,
-            nb_skills=nb_skills,
-            nb_mcp_servers=nb_mcp_servers,
-            nb_models=nb_models,
-            entrypoint=entrypoint,
-            client_name=client_name,
-            client_version=client_version,
-            terminal_emulator=terminal_emulator,
-        )
-
-    def emit_ready_telemetry(self, init_duration_ms: int) -> None:
-        self.telemetry_client.send_ready(init_duration_ms=init_duration_ms)
 
     def _create_connector_registry(self) -> ConnectorRegistry | None:
         if not connectors_enabled():
@@ -662,8 +605,6 @@ class AgentLoop:
                 threshold = result.metadata.get(
                     "threshold", self.config.get_active_model().auto_compact_threshold
                 )
-                old_session_id = self.session_id
-                old_parent_session_id = self.parent_session_id
                 tool_call_id = str(uuid4())
 
                 yield CompactStartEvent(
@@ -672,26 +613,14 @@ class AgentLoop:
                     threshold=threshold,
                 )
 
-                compact_status: Literal["success", "failure", "cancelled"] = "success"
-                new_tokens = self.stats.context_tokens
                 try:
                     summary = await self.compact()
                 except asyncio.CancelledError:
-                    compact_status = "cancelled"
                     raise
                 except Exception:
-                    compact_status = "failure"
                     raise
                 finally:
                     new_tokens = self.stats.context_tokens
-                    self.telemetry_client.send_auto_compact_triggered(
-                        nb_context_tokens_before=old_tokens,
-                        nb_context_tokens_after=new_tokens,
-                        auto_compact_threshold=threshold,
-                        status=compact_status,
-                        session_id=old_session_id,
-                        parent_session_id=old_parent_session_id,
-                    )
 
                 yield CompactEndEvent(
                     tool_call_id=tool_call_id,
@@ -706,21 +635,6 @@ class AgentLoop:
     def _get_context(self) -> ConversationContext:
         return ConversationContext(
             messages=self.messages, stats=self.stats, config=self.config
-        )
-
-    def _build_backend_metadata(
-        self, call_type: TelemetryCallType | None = None
-    ) -> TelemetryRequestMetadata:
-        return build_request_metadata(
-            entrypoint_metadata=self.entrypoint_metadata,
-            session_id=self.session_id,
-            parent_session_id=self.parent_session_id,
-            call_type=(
-                call_type
-                if call_type is not None
-                else ("main_call" if self._is_user_prompt_call else "secondary_call")
-            ),
-            message_id=self._current_user_message_id,
         )
 
     def _get_extra_headers(
@@ -962,7 +876,7 @@ class AgentLoop:
                     tool_call_id=tool_call.call_id,
                     agent_manager=self.agent_manager,
                     session_dir=self.session_logger.session_dir,
-                    entrypoint_metadata=self.entrypoint_metadata,
+                    entrypoint_metadata=self.entrypoint_metadata or {},
                     approval_callback=self.approval_callback,
                     user_input_callback=self.user_input_callback,
                     sampling_callback=self._sampling_handler,
@@ -1108,15 +1022,6 @@ class AgentLoop:
 
         if span is not None:
             set_tool_result(span, text)
-        self.telemetry_client.send_tool_call_finished(
-            tool_call=tool_call,
-            agent_profile_name=self.agent_profile.name,
-            model=self.config.active_model,
-            status=status,
-            decision=decision,
-            result=result,
-            message_id=self._current_user_message_id,
-        )
 
     def _tool_failure_event(
         self,
@@ -1141,29 +1046,9 @@ class AgentLoop:
     ) -> LLMChunk:
         active_model = model_override or self.config.get_active_model()
         provider = self.config.get_provider_for_model(active_model)
-        backend_metadata = self._build_backend_metadata()
 
         available_tools = self.format_handler.get_available_tools(self.tool_manager)
         tool_choice = self.format_handler.get_tool_choice()
-
-        last_user_message = next(
-            (
-                m
-                for m in reversed(self.messages)
-                if m.role == Role.user and not m.injected
-            ),
-            None,
-        )
-        self.telemetry_client.send_request_sent(
-            model=active_model.alias,
-            nb_context_chars=sum(len(m.content or "") for m in self.messages),
-            nb_context_messages=len(self.messages),
-            nb_prompt_chars=len(last_user_message.content or "")
-            if last_user_message
-            else 0,
-            call_type=backend_metadata.call_type,
-            message_id=backend_metadata.message_id,
-        )
 
         try:
             start_time = time.perf_counter()
@@ -1175,7 +1060,6 @@ class AgentLoop:
                 tool_choice=tool_choice,
                 extra_headers=self._get_extra_headers(provider),
                 max_tokens=max_tokens,
-                metadata=backend_metadata.model_dump(exclude_none=True),
             )
             end_time = time.perf_counter()
 
@@ -1184,9 +1068,6 @@ class AgentLoop:
                     "Usage data missing in non-streaming completion response"
                 )
             self._update_stats(usage=result.usage, time_seconds=end_time - start_time)
-
-            if result.correlation_id:
-                self.telemetry_client.last_correlation_id = result.correlation_id
 
             processed_message = self.format_handler.process_api_response_message(
                 result.message
@@ -1209,29 +1090,9 @@ class AgentLoop:
     ) -> AsyncGenerator[LLMChunk]:
         active_model = self.config.get_active_model()
         provider = self.config.get_active_provider()
-        backend_metadata = self._build_backend_metadata()
 
         available_tools = self.format_handler.get_available_tools(self.tool_manager)
         tool_choice = self.format_handler.get_tool_choice()
-
-        last_user_message = next(
-            (
-                m
-                for m in reversed(self.messages)
-                if m.role == Role.user and not m.injected
-            ),
-            None,
-        )
-        self.telemetry_client.send_request_sent(
-            model=active_model.alias,
-            nb_context_chars=sum(len(m.content or "") for m in self.messages),
-            nb_context_messages=len(self.messages),
-            nb_prompt_chars=len(last_user_message.content or "")
-            if last_user_message
-            else 0,
-            call_type=backend_metadata.call_type,
-            message_id=backend_metadata.message_id,
-        )
 
         try:
             start_time = time.perf_counter()
@@ -1245,10 +1106,7 @@ class AgentLoop:
                 tool_choice=tool_choice,
                 extra_headers=self._get_extra_headers(),
                 max_tokens=max_tokens,
-                metadata=backend_metadata.model_dump(exclude_none=True),
             ):
-                if chunk.correlation_id:
-                    self.telemetry_client.last_correlation_id = chunk.correlation_id
                 processed_message = self.format_handler.process_api_response_message(
                     chunk.message
                 )
@@ -1422,7 +1280,7 @@ class AgentLoop:
         self.session_logger.reset_session(
             self.session_id, parent_session_id=old_session_id
         )
-        self.emit_new_session_telemetry()
+
 
     async def fork(self, message_id: str | None = None) -> AgentLoop:
         messages = self._messages_for_fork(message_id)
@@ -1430,7 +1288,7 @@ class AgentLoop:
             config=self.base_config.model_copy(deep=True),
             agent_name=self.agent_profile.name,
             enable_streaming=self.enable_streaming,
-            entrypoint_metadata=self.entrypoint_metadata,
+            entrypoint_metadata=self.entrypoint_metadata or {},
             defer_heavy_init=True,
             hook_config_result=self._hook_config_result,
         )
@@ -1547,7 +1405,6 @@ class AgentLoop:
                 messages=self.messages,
                 tools=self.format_handler.get_available_tools(self.tool_manager),
                 extra_headers=self._get_extra_headers(),
-                metadata=self._build_backend_metadata().model_dump(exclude_none=True),
             )
 
             self.stats.context_tokens = actual_context_tokens

@@ -164,7 +164,6 @@ class TestMCPSamplingHandler:
         handler = MCPSamplingHandler(
             backend_getter=lambda: backend,
             config_getter=lambda: config,
-            metadata_getter=lambda: {"call_type": "secondary_call"},
             extra_headers_getter=lambda: {"x-affinity": "session-123"},
         )
 

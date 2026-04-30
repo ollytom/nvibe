@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
     from vibe.cli.voice_manager.voice_manager_port import VoiceManagerListener
     from vibe.core.audio_recorder import AudioRecorderPort
-    from vibe.core.telemetry.send import TelemetryClient
     from vibe.core.transcribe.transcribe_client_port import TranscribeClientPort
 
 TRANSCRIPTION_DRAIN_TIMEOUT = 10.0
@@ -42,12 +41,10 @@ class VoiceManager:
         config_getter: Callable[[], VibeConfig],
         audio_recorder: AudioRecorderPort,
         transcribe_client: TranscribeClientPort | None,
-        telemetry_client: TelemetryClient | None = None,
     ) -> None:
         self._config_getter = config_getter
         self._audio_recorder = audio_recorder
         self._transcribe_client = transcribe_client
-        self._telemetry_client = telemetry_client
         self._transcribe_state = TranscribeState.IDLE
         self._transcribe_task: Task[None] | None = None
         self._listeners: list[VoiceManagerListener] = []
@@ -197,55 +194,16 @@ class VoiceManager:
             self._on_audio_transcription_error(str(exc))
 
     def _on_audio_transcription_start(self) -> None:
-        if not self._telemetry_client:
-            return
-        self._telemetry_client.send_telemetry_event(
-            "vibe.audio.transcription.start",
-            {"recording_id": self._tracking.recording_id},
-        )
+        pass
 
     def _on_audio_transcription_cancel(self) -> None:
-        if not self._telemetry_client:
-            return
-        self._telemetry_client.send_telemetry_event(
-            "vibe.audio.transcription.cancel_recording",
-            {
-                "recording_id": self._tracking.recording_id,
-                "recording_duration_ms": self._tracking.elapsed_ms(),
-            },
-        )
+        pass
 
     def _on_audio_transcription_done(self) -> None:
-        if not self._telemetry_client:
-            return
-        transcription_duration_ms = self._tracking.elapsed_ms()
-        recording_duration_ms = (
-            self._tracking.last_recording_duration_ms
-            if self._tracking.last_recording_duration_ms is not None
-            else transcription_duration_ms
-        )
-        self._telemetry_client.send_telemetry_event(
-            "vibe.audio.transcription.done",
-            {
-                "recording_id": self._tracking.recording_id,
-                "transcript_length": self._tracking.accumulated_transcript_length,
-                "transcription_duration_ms": transcription_duration_ms,
-                "recording_duration_ms": recording_duration_ms,
-            },
-        )
+        pass
 
     def _on_audio_transcription_error(self, error_message: str) -> None:
-        if not self._telemetry_client:
-            return
-        self._telemetry_client.send_telemetry_event(
-            "vibe.audio.transcription.error",
-            {
-                "recording_id": self._tracking.recording_id,
-                "error_message": error_message,
-                "transcription_duration_ms": self._tracking.elapsed_ms(),
-                "recording_duration_ms": self._tracking.last_recording_duration_ms,
-            },
-        )
+        pass
 
     def _set_state(self, state: TranscribeState) -> None:
         if self._transcribe_state == state:

@@ -75,7 +75,7 @@ def make_agent_loop(
 
 @pytest.mark.asyncio
 async def test_single_tool_call_executes_under_auto_approve(
-    telemetry_events: list[dict],
+
 ) -> None:
     mocked_tool_call_id = "call_1"
     tool_call = make_todo_tool_call(mocked_tool_call_id)
@@ -111,18 +111,10 @@ async def test_single_tool_call_executes_under_auto_approve(
     assert tool_msgs[-1].tool_call_id == mocked_tool_call_id
     assert "total_count" in (tool_msgs[-1].content or "")
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 1
-    assert tool_finished[0]["properties"]["tool_name"] == "todo"
-    assert tool_finished[0]["properties"]["status"] == "success"
-    assert tool_finished[0]["properties"]["approval_type"] == "always"
-
 
 @pytest.mark.asyncio
 async def test_tool_call_requires_approval_if_not_auto_approved(
-    telemetry_events: list[dict],
+
 ) -> None:
     agent_loop = make_agent_loop(
         auto_approve=False,
@@ -156,15 +148,9 @@ async def test_tool_call_requires_approval_if_not_auto_approved(
     assert agent_loop.stats.tool_calls_agreed == 0
     assert agent_loop.stats.tool_calls_succeeded == 0
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 1
-    assert tool_finished[0]["properties"]["approval_type"] == "ask"
-
 
 @pytest.mark.asyncio
-async def test_tool_call_approved_by_callback(telemetry_events: list[dict]) -> None:
+async def test_tool_call_approved_by_callback() -> None:
     async def approval_callback(
         _tool_name: str, _args: BaseModel, _tool_call_id: str, _rp: list | None = None
     ) -> tuple[ApprovalResponse, str | None]:
@@ -196,16 +182,10 @@ async def test_tool_call_approved_by_callback(telemetry_events: list[dict]) -> N
     assert agent_loop.stats.tool_calls_rejected == 0
     assert agent_loop.stats.tool_calls_succeeded == 1
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 1
-    assert tool_finished[0]["properties"]["approval_type"] == "ask"
-
 
 @pytest.mark.asyncio
 async def test_tool_call_rejected_when_auto_approve_disabled_and_rejected_by_callback(
-    telemetry_events: list[dict],
+
 ) -> None:
     custom_feedback = "User declined tool execution"
 
@@ -242,16 +222,10 @@ async def test_tool_call_rejected_when_auto_approve_disabled_and_rejected_by_cal
     assert agent_loop.stats.tool_calls_agreed == 0
     assert agent_loop.stats.tool_calls_succeeded == 0
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 1
-    assert tool_finished[0]["properties"]["approval_type"] == "ask"
-
 
 @pytest.mark.asyncio
 async def test_tool_call_skipped_when_permission_is_never(
-    telemetry_events: list[dict],
+
 ) -> None:
     agent_loop = make_agent_loop(
         auto_approve=False,
@@ -285,12 +259,6 @@ async def test_tool_call_skipped_when_permission_is_never(
     assert agent_loop.stats.tool_calls_rejected == 1
     assert agent_loop.stats.tool_calls_agreed == 0
     assert agent_loop.stats.tool_calls_succeeded == 0
-
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 1
-    assert tool_finished[0]["properties"]["approval_type"] == "never"
 
 
 @pytest.mark.asyncio
@@ -518,7 +486,7 @@ async def test_fill_missing_tool_responses_inserts_placeholders() -> None:
 
 @pytest.mark.asyncio
 async def test_parallel_tool_calls_produce_correct_events(
-    telemetry_events: list[dict],
+
 ) -> None:
     """Two tool calls in one LLM response should execute in parallel and produce correct events."""
     tool_call_1 = make_todo_tool_call("call_p1", index=0)
@@ -562,15 +530,12 @@ async def test_parallel_tool_calls_produce_correct_events(
     assert {m.tool_call_id for m in tool_msgs} == {"call_p1", "call_p2"}
     assert agent_loop.stats.tool_calls_succeeded == 2
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 2
+    
 
 
 @pytest.mark.asyncio
 async def test_parallel_tool_calls_with_approval_callback(
-    telemetry_events: list[dict],
+
 ) -> None:
     """Two parallel tool calls requiring approval should both succeed when approved."""
     approval_calls: list[str] = []
@@ -649,7 +614,7 @@ async def test_parallel_approvals_can_run_concurrently() -> None:
 
 @pytest.mark.asyncio
 async def test_parallel_mixed_approval_and_rejection(
-    telemetry_events: list[dict],
+
 ) -> None:
     """One tool approved, one rejected — both should produce correct events."""
 
@@ -687,14 +652,11 @@ async def test_parallel_mixed_approval_and_rejection(
     assert agent_loop.stats.tool_calls_rejected == 1
     assert agent_loop.stats.tool_calls_succeeded == 1
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 2
+    
 
 
 @pytest.mark.asyncio
-async def test_parallel_three_tools_all_succeed(telemetry_events: list[dict]) -> None:
+async def test_parallel_three_tools_all_succeed() -> None:
     """Three parallel tool calls should all complete successfully."""
     tool_calls = [make_todo_tool_call(f"call_t{i}", index=i) for i in range(3)]
     agent_loop = make_agent_loop(
@@ -728,10 +690,7 @@ async def test_parallel_three_tools_all_succeed(telemetry_events: list[dict]) ->
     tool_msgs = [m for m in agent_loop.messages if m.role == Role.tool]
     assert len(tool_msgs) == 3
 
-    tool_finished = [
-        e for e in telemetry_events if e.get("event_name") == "vibe.tool_call_finished"
-    ]
-    assert len(tool_finished) == 3
+    
 
 
 @pytest.mark.asyncio

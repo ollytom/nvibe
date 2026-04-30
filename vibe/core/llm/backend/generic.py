@@ -241,7 +241,6 @@ class GenericBackend:
         max_tokens: int | None = None,
         tool_choice: StrToolChoice | AvailableTool | None = None,
         extra_headers: dict[str, str] | None = None,
-        metadata: dict[str, str] | None = None,
     ) -> LLMChunk:
         api_key = (
             os.getenv(self._provider.api_key_env_var)
@@ -309,7 +308,6 @@ class GenericBackend:
         max_tokens: int | None = None,
         tool_choice: StrToolChoice | AvailableTool | None = None,
         extra_headers: dict[str, str] | None = None,
-        metadata: dict[str, str] | None = None,
     ) -> AsyncGenerator[LLMChunk, None]:
         api_key = (
             os.getenv(self._provider.api_key_env_var)
@@ -424,7 +422,6 @@ class GenericBackend:
         tools: list[AvailableTool] | None = None,
         tool_choice: StrToolChoice | AvailableTool | None = None,
         extra_headers: dict[str, str] | None = None,
-        metadata: dict[str, str] | None = None,
     ) -> int:
         probe_messages = list(messages)
         if not probe_messages or probe_messages[-1].role != Role.user:

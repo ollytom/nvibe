@@ -15,7 +15,6 @@ from vibe.core.config.harness_files import (
 )
 from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
-from vibe.core.telemetry.build_metadata import build_entrypoint_metadata
 
 # Configure line buffering for subprocess communication
 sys.stdout.reconfigure(line_buffering=True)  # pyright: ignore[reportAttributeAccessIssue]
@@ -87,14 +86,7 @@ def main() -> None:
     bootstrap_config_files()
     args = parse_arguments()
     if args.setup:
-        run_onboarding(
-            entrypoint_metadata=build_entrypoint_metadata(
-                agent_entrypoint="acp",
-                agent_version=__version__,
-                client_name="vibe_acp",
-                client_version=__version__,
-            )
-        )
+        run_onboarding()
         sys.exit(0)
 
     try:

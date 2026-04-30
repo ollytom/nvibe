@@ -20,16 +20,13 @@ class TestCloseSession:
         session = acp_agent_loop.sessions[session_response.session_id]
 
         backend_close = AsyncMock()
-        telemetry_close = AsyncMock()
         cast(Any, session.agent_loop.backend).close = backend_close
-        session.agent_loop.telemetry_client.aclose = telemetry_close
 
         response = await acp_agent_loop.close_session(session_response.session_id)
 
         assert response is not None
         assert session_response.session_id not in acp_agent_loop.sessions
         backend_close.assert_awaited_once()
-        telemetry_close.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_close_session_cancels_active_prompt(
@@ -42,7 +39,6 @@ class TestCloseSession:
             await asyncio.Event().wait()
 
         task = session.set_prompt_task(wait_forever())
-        session.agent_loop.telemetry_client.aclose = AsyncMock()
 
         await acp_agent_loop.close_session(session_response.session_id)
 
@@ -63,7 +59,6 @@ class TestCloseSession:
         bg_task = session.spawn(background_work())
         assert bg_task is not None
 
-        session.agent_loop.telemetry_client.aclose = AsyncMock()
 
         await acp_agent_loop.close_session(session_response.session_id)
 
@@ -75,8 +70,6 @@ class TestCloseSession:
     ) -> None:
         session_response = await acp_agent_loop.new_session(cwd=".", mcp_servers=[])
         session = acp_agent_loop.sessions[session_response.session_id]
-        session.agent_loop.telemetry_client.aclose = AsyncMock()
-
         await acp_agent_loop.close_session(session_response.session_id)
 
         async def noop() -> None:
@@ -89,9 +82,6 @@ class TestCloseSession:
         self, acp_agent_loop: VibeAcpAgentLoop
     ) -> None:
         session_response = await acp_agent_loop.new_session(cwd=".", mcp_servers=[])
-        session = acp_agent_loop.sessions[session_response.session_id]
-        session.agent_loop.telemetry_client.aclose = AsyncMock()
-
         await acp_agent_loop.close_session(session_response.session_id)
 
         with pytest.raises(RequestError, match="Session not found"):

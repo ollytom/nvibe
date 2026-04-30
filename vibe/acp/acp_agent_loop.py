@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 from contextlib import aclosing
 import inspect
 import logging
@@ -64,7 +64,7 @@ from acp.schema import (
     Usage,
     UsageUpdate,
 )
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from vibe import VIBE_ROOT, __version__
 from vibe.acp.acp_logger import acp_message_observer
@@ -124,9 +124,6 @@ from vibe.core.proxy_setup import (
 )
 from vibe.core.session.session_loader import SessionLoader
 from vibe.core.skills.manager import SkillManager
-from vibe.core.telemetry.build_metadata import build_entrypoint_metadata
-from vibe.core.telemetry.send import TelemetryClient
-from vibe.core.telemetry.types import EntrypointMetadata
 from vibe.core.tools.permissions import RequiredPermission
 from vibe.core.types import (
     AgentProfileChangedEvent,
@@ -158,16 +155,6 @@ class ForkSessionParams(BaseModel):
 
     message_id: str | None = Field(default=None, alias="messageId")
 
-
-class TelemetrySendNotification(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    event: str
-    properties: dict[str, Any] = Field(default_factory=dict)
-    session_id: str = Field(validation_alias=AliasChoices("session_id", "sessionId"))
-
-
-_EVENT_DISPATCHERS: dict[str, Callable[[TelemetryClient, dict[str, Any]], None]] = {}
 
 
 def _resolved_user_message_id(client_message_id: str | None) -> str:
@@ -265,13 +252,6 @@ class VibeAcpAgentLoop(AcpAgent):
     ) -> AuthenticateResponse | None:
         raise NotImplementedMethodError("authenticate")
 
-    def _build_entrypoint_metadata(self) -> EntrypointMetadata:
-        return build_entrypoint_metadata(
-            agent_entrypoint="acp",
-            agent_version=__version__,
-            client_name=self.client_info.name if self.client_info else "",
-            client_version=self.client_info.version if self.client_info else "",
-        )
 
     def _load_config(self) -> VibeConfig:
         try:
@@ -311,7 +291,7 @@ class VibeAcpAgentLoop(AcpAgent):
             config=config,
             agent_name=agent_name,
             enable_streaming=True,
-            entrypoint_metadata=self._build_entrypoint_metadata(),
+
             defer_heavy_init=True,
             hook_config_result=hook_config_result,
         )
@@ -355,7 +335,6 @@ class VibeAcpAgentLoop(AcpAgent):
         except Exception as e:
             raise ConfigurationError(str(e)) from e
 
-        agent_loop.emit_new_session_telemetry()
 
         modes_state, _, models_state, _ = self._build_session_state(session)
 
@@ -399,9 +378,6 @@ class VibeAcpAgentLoop(AcpAgent):
                     session.agent_loop.approve_always(tool_name, required_permissions)
                     return (ApprovalResponse.YES, None)
                 case ToolOption.REJECT_ONCE:
-                    session.agent_loop.telemetry_client.send_user_cancelled_action(
-                        "reject_approval"
-                    )
                     return (
                         ApprovalResponse.NO,
                         "User rejected the tool call, provide an alternative plan",
@@ -750,9 +726,6 @@ class VibeAcpAgentLoop(AcpAgent):
             raise InternalError(f"Failed to read skill file: {e}") from e
 
         if skill:
-            session.agent_loop.telemetry_client.send_slash_command_used(
-                skill.name, "skill"
-            )
             text_prompt = SkillManager.build_skill_prompt(text_prompt, skill)
 
         async def agent_loop_task() -> None:
@@ -852,7 +825,6 @@ class VibeAcpAgentLoop(AcpAgent):
         if command is None:
             return None
 
-        session.agent_loop.telemetry_client.send_slash_command_used(cmd_name, "builtin")
         handler = getattr(self, command.handler)
         return await handler(session, text_prompt, message_id)
 
@@ -944,14 +916,9 @@ class VibeAcpAgentLoop(AcpAgent):
             if inspect.isawaitable(close_result):
                 await close_result
 
-        await agent_loop.telemetry_client.aclose()
-
     @override
     async def cancel(self, session_id: str, **kwargs: Any) -> None:
         session = self._get_session(session_id)
-        session.agent_loop.telemetry_client.send_user_cancelled_action(
-            "interrupt_agent"
-        )
         await session.cancel_prompt()
 
     @override
@@ -1014,34 +981,7 @@ class VibeAcpAgentLoop(AcpAgent):
 
     @override
     async def ext_notification(self, method: str, params: dict) -> None:
-        # ACP strips the leading "_" before delegating extension notifications here.
-        if method == "telemetry/send":
-            self._handle_telemetry_notification(params)
-
-    def _handle_telemetry_notification(self, params: dict[str, Any]) -> None:
-        try:
-            notification = TelemetrySendNotification.model_validate(params)
-        except ValidationError as exc:
-            raise InvalidRequestError(
-                f"Invalid ACP telemetry notification: {exc}"
-            ) from exc
-
-        session = self.sessions.get(notification.session_id)
-        if session is None:
-            logger.warning(
-                "Ignoring ACP telemetry notification because session could not be resolved: %s",
-                notification.session_id,
-            )
-            return
-
-        dispatcher = _EVENT_DISPATCHERS.get(notification.event)
-        if dispatcher is None:
-            logger.warning(
-                "Ignoring unsupported ACP telemetry event: %s", notification.event
-            )
-            return
-
-        dispatcher(session.agent_loop.telemetry_client, notification.properties)
+        pass
 
     @override
     def on_connect(self, conn: Client) -> None:

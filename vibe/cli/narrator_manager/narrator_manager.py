@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from vibe.cli.turn_summary import TurnSummaryPort
     from vibe.core.audio_player.audio_player_port import AudioPlayerPort
     from vibe.core.config import VibeConfig
-    from vibe.core.telemetry.send import TelemetryClient
     from vibe.core.tts.tts_client_port import TTSClientPort
     from vibe.core.types import BaseEvent
 
@@ -35,14 +34,12 @@ class NarratorManager:
         self,
         config_getter: Callable[[], VibeConfig],
         audio_player: AudioPlayerPort,
-        telemetry_client: TelemetryClient | None = None,
     ) -> None:
         self._config_getter = config_getter
         self._audio_player = audio_player
-        self._telemetry_client = telemetry_client
         config = config_getter()
         self._turn_summary: TurnSummaryPort = self._make_turn_summary(
-            config, telemetry_client
+            config
         )
         self._turn_summary.on_summary = self._on_turn_summary
         self._tts_client: TTSClientPort | None = self._make_tts_client(config)
@@ -126,12 +123,12 @@ class NarratorManager:
     def sync(self) -> None:
         self.cancel()
         config = self._config_getter()
-        self.turn_summary = self._make_turn_summary(config, self._telemetry_client)
+        self.turn_summary = self._make_turn_summary(config)
         self.tts_client = self._make_tts_client(config)
 
     @staticmethod
     def _make_turn_summary(
-        config: VibeConfig, telemetry_client: TelemetryClient | None = None
+        config: VibeConfig
     ) -> NoopTurnSummary | TurnSummaryTracker:
         if not config.narrator_enabled:
             return NoopTurnSummary()
@@ -142,11 +139,6 @@ class NarratorManager:
         return TurnSummaryTracker(
             backend=backend,
             model=model,
-            session_metadata_getter=(
-                None
-                if telemetry_client is None
-                else telemetry_client.build_client_event_metadata
-            ),
         )
 
     @staticmethod
@@ -222,43 +214,15 @@ class NarratorManager:
         self._set_state(NarratorState.IDLE)
 
     def _on_read_aloud_requested(self) -> None:
-        if not self._telemetry_client:
-            return
-        self._telemetry_client.send_telemetry_event(
-            "vibe.read_aloud.requested",
-            {
-                "read_aloud_session_id": self._tracking.session_id,
-                "trigger": "autoplay_next_message",
-            },
-        )
+        pass
 
     def _on_read_aloud_play_started(self) -> None:
-        if not self._telemetry_client:
-            return
-        self._telemetry_client.send_telemetry_event(
-            "vibe.read_aloud.play_started",
-            {
-                "read_aloud_session_id": self._tracking.session_id,
-                "time_to_first_read_s": self._tracking.time_to_first_read_s(),
-                "speed_selection": None,
-            },
-        )
+        pass
 
     def _on_read_aloud_ended(
         self, status: str, *, error_type: str | None = None
     ) -> None:
-        if not self._telemetry_client:
-            return
-        self._telemetry_client.send_telemetry_event(
-            "vibe.read_aloud.ended",
-            {
-                "read_aloud_session_id": self._tracking.session_id,
-                "status": status,
-                "error_type": error_type,
-                "speed_selection": None,
-                "elapsed_seconds": self._tracking.elapsed_since_play_s(),
-            },
-        )
+        pass
 
     def _set_state(self, state: NarratorState) -> None:
         self._state = state

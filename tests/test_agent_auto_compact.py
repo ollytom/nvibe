@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -24,20 +23,8 @@ from vibe.core.types import (
 )
 
 
-def _get_auto_compact_properties(
-    telemetry_events: list[dict[str, object]],
-) -> dict[str, object]:
-    auto_compact = [
-        event
-        for event in telemetry_events
-        if event.get("event_name") == "vibe.auto_compact_triggered"
-    ]
-    assert len(auto_compact) == 1
-    return cast(dict[str, object], auto_compact[0]["properties"])
-
-
 @pytest.mark.asyncio
-async def test_auto_compact_emits_correct_events(telemetry_events: list[dict]) -> None:
+async def test_auto_compact_emits_correct_events() -> None:
     backend = FakeBackend([
         [mock_llm_chunk(content="<summary>")],
         [mock_llm_chunk(content="<final>")],
@@ -45,7 +32,6 @@ async def test_auto_compact_emits_correct_events(telemetry_events: list[dict]) -
     cfg = build_test_vibe_config(models=make_test_models(auto_compact_threshold=1))
     agent = build_test_agent_loop(config=cfg, backend=backend)
     agent.stats.context_tokens = 2
-    old_session_id = agent.session_id
 
     events = [ev async for ev in agent.act("Hello")]
 
@@ -63,13 +49,6 @@ async def test_auto_compact_emits_correct_events(telemetry_events: list[dict]) -
     assert end.new_context_tokens >= 1
     assert final.content == "<final>"
 
-    properties = _get_auto_compact_properties(telemetry_events)
-    assert properties["nb_context_tokens_before"] == 2
-    assert properties["nb_context_tokens_after"] == end.new_context_tokens
-    assert properties["auto_compact_threshold"] == 1
-    assert properties["status"] == "success"
-    assert properties["session_id"] == old_session_id
-    assert properties["parent_session_id"] is None
 
 
 @pytest.mark.asyncio
@@ -88,18 +67,16 @@ async def test_auto_compact_emits_correct_events(telemetry_events: list[dict]) -
         ),
     ],
 )
-async def test_auto_compact_emits_terminal_telemetry(
+async def test_auto_compact_emits_terminal(
     side_effect: BaseException,
     expected_exception: type[BaseException],
     match: str | None,
     expected_status: str,
-    telemetry_events: list[dict],
 ) -> None:
     backend = FakeBackend([[mock_llm_chunk(content="<final>")]])
     cfg = build_test_vibe_config(models=make_test_models(auto_compact_threshold=1))
     agent = build_test_agent_loop(config=cfg, backend=backend)
     agent.stats.context_tokens = 2
-    old_session_id = agent.session_id
 
     events = []
     with patch.object(agent, "compact", AsyncMock(side_effect=side_effect)):
@@ -116,13 +93,6 @@ async def test_auto_compact_emits_terminal_telemetry(
     assert isinstance(events[0], UserMessageEvent)
     assert isinstance(events[1], CompactStartEvent)
 
-    properties = _get_auto_compact_properties(telemetry_events)
-    assert properties["nb_context_tokens_before"] == 2
-    assert properties["nb_context_tokens_after"] == 2
-    assert properties["auto_compact_threshold"] == 1
-    assert properties["status"] == expected_status
-    assert properties["session_id"] == old_session_id
-    assert properties["parent_session_id"] is None
 
 
 @pytest.mark.asyncio

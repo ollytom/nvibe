@@ -31,7 +31,6 @@ from vibe.core.utils.io import read_safe
 if TYPE_CHECKING:
     from vibe.core.agents.manager import AgentManager
     from vibe.core.skills.manager import SkillManager
-    from vibe.core.telemetry.types import EntrypointMetadata
     from vibe.core.tools.mcp_sampling import MCPSamplingHandler
     from vibe.core.tools.permissions import PermissionContext
     from vibe.core.types import ApprovalCallback, SwitchAgentCallback, UserInputCallback
@@ -49,7 +48,7 @@ class InvokeContext:
     user_input_callback: UserInputCallback | None = field(default=None)
     sampling_callback: MCPSamplingHandler | None = field(default=None)
     session_dir: Path | None = field(default=None)
-    entrypoint_metadata: EntrypointMetadata | None = field(default=None)
+    entrypoint_metadata: dict[str, str] | None = field(default=None)
     plan_file_path: Path | None = field(default=None)
     switch_agent_callback: SwitchAgentCallback | None = field(default=None)
     skill_manager: SkillManager | None = field(default=None)

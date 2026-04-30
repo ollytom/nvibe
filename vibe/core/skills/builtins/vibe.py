@@ -68,7 +68,6 @@ file_watcher_for_autocomplete = false
 # Behavior
 bypass_tool_permissions = false    # Skip tool approval prompts
 system_prompt_id = "cli"          # System prompt: "cli", "lean", or custom .md filename
-enable_telemetry = true
 enable_update_checks = true
 enable_auto_update = true
 enable_notifications = true
