@@ -136,16 +136,7 @@ class CommandRegistry:
                 ),
                 handler="_show_mcp",
             ),
-            "leanstall": Command(
-                aliases=frozenset(["/leanstall"]),
-                description="Install the Lean 4 agent (leanstral)",
-                handler="_install_lean",
-            ),
-            "unleanstall": Command(
-                aliases=frozenset(["/unleanstall"]),
-                description="Uninstall the Lean 4 agent",
-                handler="_uninstall_lean",
-            ),
+
             "rewind": Command(
                 aliases=frozenset(["/rewind"]),
                 description="Rewind to a previous message",
