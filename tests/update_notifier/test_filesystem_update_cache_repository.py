@@ -36,7 +36,6 @@ async def test_reads_cache_from_toml_when_present(tmp_path: Path) -> None:
     assert cache is not None
     assert cache.latest_version == "1.2.3"
     assert cache.stored_at_timestamp == 1_700_000_000
-    assert cache.seen_whats_new_version is None
 
 
 @pytest.mark.asyncio
@@ -84,44 +83,6 @@ async def test_set_writes_to_toml(tmp_path: Path) -> None:
         data = tomllib.load(f)
     assert data["update_cache"]["latest_version"] == "1.1.0"
     assert data["update_cache"]["stored_at_timestamp"] == 1_700_200_000
-    assert data["update_cache"].get("seen_whats_new_version") is None
-
-
-@pytest.mark.asyncio
-async def test_reads_cache_with_seen_whats_new_version(tmp_path: Path) -> None:
-    _write_cache_toml(
-        tmp_path,
-        {
-            "update_cache": {
-                "latest_version": "1.2.3",
-                "stored_at_timestamp": 1_700_000_000,
-                "seen_whats_new_version": "1.2.0",
-            }
-        },
-    )
-    repository = FileSystemUpdateCacheRepository(base_path=tmp_path)
-
-    cache = await repository.get()
-
-    assert cache is not None
-    assert cache.seen_whats_new_version == "1.2.0"
-
-
-@pytest.mark.asyncio
-async def test_writes_cache_with_seen_whats_new_version(tmp_path: Path) -> None:
-    repository = FileSystemUpdateCacheRepository(base_path=tmp_path)
-
-    await repository.set(
-        UpdateCache(
-            latest_version="1.1.0",
-            stored_at_timestamp=1_700_200_000,
-            seen_whats_new_version="1.1.0",
-        )
-    )
-
-    with (tmp_path / "cache.toml").open("rb") as f:
-        data = tomllib.load(f)
-    assert data["update_cache"]["seen_whats_new_version"] == "1.1.0"
 
 
 @pytest.mark.asyncio

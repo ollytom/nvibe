@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from pathlib import Path
 import time
 from unittest.mock import patch
 
@@ -15,7 +14,6 @@ from tests.update_notifier.adapters.fake_update_cache_repository import (
 )
 from tests.update_notifier.adapters.fake_update_gateway import FakeUpdateGateway
 from vibe.cli.textual_ui.app import VibeApp
-from vibe.cli.textual_ui.widgets.messages import WhatsNewMessage
 from vibe.cli.update_notifier import (
     Update,
     UpdateCache,
@@ -193,152 +191,6 @@ async def test_ui_does_show_toast_when_cache_entry_is_too_old(
         == "0.1.0 => 0.2.0\nPlease update mistral-vibe with your package manager"
     )
     assert notifier.fetch_update_calls == 1
-
-
-async def _wait_for_whats_new_message(
-    app: VibeApp, pilot, *, timeout: float = 1.0, interval: float = 0.05
-) -> WhatsNewMessage:
-    loop = asyncio.get_running_loop()
-    deadline = loop.time() + timeout
-
-    while loop.time() < deadline:
-        try:
-            message = app.query_one(WhatsNewMessage)
-            if message:
-                return message
-        except Exception:
-            pass
-        await pilot.pause(interval)
-
-    pytest.fail("WhatsNewMessage not displayed")
-
-
-@pytest.mark.asyncio
-async def test_ui_displays_whats_new_message_when_content_exists(
-    build_update_test_app: Callable[..., VibeApp], tmp_path: Path
-) -> None:
-    notifier = FakeUpdateGateway(update=None)
-    cache = UpdateCache(
-        latest_version="1.0.0",
-        stored_at_timestamp=int(time.time()),
-        seen_whats_new_version=None,
-    )
-    repository = FakeUpdateCacheRepository(update_cache=cache)
-    app = build_update_test_app(
-        update_notifier=notifier,
-        update_cache_repository=repository,
-        current_version="1.0.0",
-    )
-
-    whats_new_content = "# What's New\n\n- Feature 1\n- Feature 2"
-    with patch("vibe.cli.update_notifier.whats_new.VIBE_ROOT", tmp_path):
-        whats_new_file = tmp_path / "whats_new.md"
-        whats_new_file.write_text(whats_new_content)
-
-        async with app.run_test() as pilot:
-            await pilot.pause(0.5)
-            message = await _wait_for_whats_new_message(app, pilot, timeout=0.5)
-
-    assert message is not None
-    assert message._content == whats_new_content
-    assert repository.update_cache is not None
-    assert repository.update_cache.seen_whats_new_version == "1.0.0"
-
-
-@pytest.mark.asyncio
-async def test_ui_does_not_display_whats_new_when_seen_whats_new_version_matches(
-    build_update_test_app: Callable[..., VibeApp], tmp_path: Path
-) -> None:
-    notifier = FakeUpdateGateway(update=None)
-    cache = UpdateCache(
-        latest_version="1.0.0",
-        stored_at_timestamp=int(time.time()),
-        seen_whats_new_version="1.0.0",
-    )
-    repository = FakeUpdateCacheRepository(update_cache=cache)
-    app = build_update_test_app(
-        update_notifier=notifier,
-        update_cache_repository=repository,
-        current_version="1.0.0",
-    )
-
-    with patch("vibe.cli.update_notifier.whats_new.VIBE_ROOT", tmp_path):
-        whats_new_file = tmp_path / "whats_new.md"
-        whats_new_file.write_text("# What's New\n\n- Feature 1")
-
-        async with app.run_test() as pilot:
-            await pilot.pause(0.5)
-
-    try:
-        app.query_one(WhatsNewMessage)
-        pytest.fail("WhatsNewMessage should not be displayed")
-    except Exception:
-        pass
-
-
-@pytest.mark.asyncio
-async def test_ui_does_not_display_whats_new_when_file_is_empty(
-    build_update_test_app: Callable[..., VibeApp], tmp_path: Path
-) -> None:
-    notifier = FakeUpdateGateway(update=None)
-    cache = UpdateCache(
-        latest_version="1.0.0",
-        stored_at_timestamp=int(time.time()),
-        seen_whats_new_version=None,
-    )
-    repository = FakeUpdateCacheRepository(update_cache=cache)
-    app = build_update_test_app(
-        update_notifier=notifier,
-        update_cache_repository=repository,
-        current_version="1.0.0",
-    )
-
-    with patch("vibe.cli.update_notifier.whats_new.VIBE_ROOT", tmp_path):
-        whats_new_file = tmp_path / "whats_new.md"
-        whats_new_file.write_text("")
-
-        async with app.run_test() as pilot:
-            await pilot.pause(0.5)
-
-    try:
-        app.query_one(WhatsNewMessage)
-        pytest.fail("WhatsNewMessage should not be displayed")
-    except Exception:
-        pass  # Expected: message should not exist
-
-    assert repository.update_cache is not None
-    assert repository.update_cache.seen_whats_new_version == "1.0.0"
-
-
-@pytest.mark.asyncio
-async def test_ui_does_not_display_whats_new_when_file_does_not_exist(
-    build_update_test_app: Callable[..., VibeApp], tmp_path: Path
-) -> None:
-    notifier = FakeUpdateGateway(update=None)
-    cache = UpdateCache(
-        latest_version="1.0.0",
-        stored_at_timestamp=int(time.time()),
-        seen_whats_new_version=None,
-    )
-    repository = FakeUpdateCacheRepository(update_cache=cache)
-    app = build_update_test_app(
-        update_notifier=notifier,
-        update_cache_repository=repository,
-        current_version="1.0.0",
-    )
-
-    with patch("vibe.cli.update_notifier.whats_new.VIBE_ROOT", tmp_path):
-        async with app.run_test() as pilot:
-            await pilot.pause(0.5)
-
-    try:
-        app.query_one(WhatsNewMessage)
-        pytest.fail("WhatsNewMessage should not be displayed")
-    except Exception:
-        pass  # Expected: message should not exist
-
-    assert repository.update_cache is not None
-    assert repository.update_cache.seen_whats_new_version == "1.0.0"
 
 
 @pytest.mark.asyncio

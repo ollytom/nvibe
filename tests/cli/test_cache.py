@@ -54,7 +54,6 @@ class TestWriteCache:
             "[update_cache]\n"
             'latest_version = "1.0.0"\n'
             "stored_at_timestamp = 1\n"
-            'seen_whats_new_version = "1.0.0"\n\n'
             "[feedback]\n"
             "last_shown_at = 100.0\n"
         )
@@ -69,5 +68,4 @@ class TestWriteCache:
             data = tomllib.load(f)
         assert data["update_cache"]["latest_version"] == "2.0.0"
         assert data["update_cache"]["stored_at_timestamp"] == 2
-        assert data["update_cache"]["seen_whats_new_version"] == "1.0.0"
         assert data["feedback"]["last_shown_at"] == 100.0

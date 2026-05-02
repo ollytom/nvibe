@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-from unittest.mock import patch
-
 from textual.pilot import Pilot
 
 from tests.snapshots.base_snapshot_test_app import BaseSnapshotTestApp, default_config
@@ -28,18 +25,12 @@ class SnapshotTestAppWithUpdate(BaseSnapshotTestApp):
         )
 
 
-def test_snapshot_shows_release_update_notification(
-    snap_compare: SnapCompare, tmp_path: Path
-) -> None:
-    whats_new_file = tmp_path / "whats_new.md"
-    whats_new_file.write_text("# What's New\n\n- Feature 1\n- Feature 2")
-
+def test_snapshot_shows_release_update_notification(snap_compare: SnapCompare) -> None:
     async def run_before(pilot: Pilot) -> None:
         await pilot.pause(0.2)
 
-    with patch("vibe.cli.update_notifier.whats_new.VIBE_ROOT", tmp_path):
-        assert snap_compare(
-            "test_ui_snapshot_release_update_notification.py:SnapshotTestAppWithUpdate",
-            terminal_size=(120, 36),
-            run_before=run_before,
-        )
+    assert snap_compare(
+        "test_ui_snapshot_release_update_notification.py:SnapshotTestAppWithUpdate",
+        terminal_size=(120, 36),
+        run_before=run_before,
+    )

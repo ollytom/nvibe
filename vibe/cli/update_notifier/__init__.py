@@ -21,11 +21,6 @@ from vibe.cli.update_notifier.update import (
     UpdateError,
     get_update_if_available,
 )
-from vibe.cli.update_notifier.whats_new import (
-    load_whats_new_content,
-    mark_version_as_seen,
-    should_show_whats_new,
-)
 
 __all__ = [
     "DEFAULT_GATEWAY_MESSAGES",
@@ -41,7 +36,4 @@ __all__ = [
     "UpdateGatewayCause",
     "UpdateGatewayError",
     "get_update_if_available",
-    "load_whats_new_content",
-    "mark_version_as_seen",
-    "should_show_whats_new",
 ]

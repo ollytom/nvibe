@@ -31,8 +31,6 @@ class FileSystemUpdateCacheRepository(UpdateCacheRepository):
             "latest_version": update_cache.latest_version,
             "stored_at_timestamp": update_cache.stored_at_timestamp,
         }
-        if update_cache.seen_whats_new_version is not None:
-            payload["seen_whats_new_version"] = update_cache.seen_whats_new_version
         await asyncio.to_thread(write_cache, self._cache_file, _CACHE_SECTION, payload)
 
     def _read_section(self) -> dict | None:
@@ -57,21 +55,12 @@ class FileSystemUpdateCacheRepository(UpdateCacheRepository):
     def _parse(data: dict) -> UpdateCache | None:
         latest_version = data.get("latest_version")
         stored_at_timestamp = data.get("stored_at_timestamp")
-        seen_whats_new_version = data.get("seen_whats_new_version")
 
         if not isinstance(latest_version, str) or not isinstance(
             stored_at_timestamp, int
         ):
             return None
 
-        if (
-            not isinstance(seen_whats_new_version, str)
-            and seen_whats_new_version is not None
-        ):
-            seen_whats_new_version = None
-
         return UpdateCache(
-            latest_version=latest_version,
-            stored_at_timestamp=stored_at_timestamp,
-            seen_whats_new_version=seen_whats_new_version,
+            latest_version=latest_version, stored_at_timestamp=stored_at_timestamp
         )

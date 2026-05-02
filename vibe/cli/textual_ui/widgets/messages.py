@@ -239,16 +239,6 @@ class UserCommandMessage(Static):
                 yield Markdown(self._content)
 
 
-class WhatsNewMessage(Static):
-    def __init__(self, content: str) -> None:
-        super().__init__()
-        self.add_class("whats-new-message")
-        self._content = content
-
-    def compose(self) -> ComposeResult:
-        yield Markdown(self._content)
-
-
 class InterruptMessage(Static):
     def __init__(self) -> None:
         super().__init__()

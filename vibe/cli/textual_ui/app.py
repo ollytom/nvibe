@@ -31,7 +31,6 @@ from vibe.cli.plan_offer.adapters.http_whoami_gateway import HttpWhoAmIGateway
 from vibe.cli.plan_offer.decide_plan_offer import (
     PlanInfo,
     decide_plan_offer,
-    plan_offer_cta,
     plan_title,
     resolve_api_key_for_plan,
 )
@@ -72,7 +71,6 @@ from vibe.cli.textual_ui.widgets.messages import (
     UserCommandMessage,
     UserMessage,
     WarningMessage,
-    WhatsNewMessage,
 )
 from vibe.cli.textual_ui.widgets.model_picker import ModelPickerApp
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
@@ -102,9 +100,6 @@ from vibe.cli.update_notifier import (
     UpdateError,
     UpdateGateway,
     get_update_if_available,
-    load_whats_new_content,
-    mark_version_as_seen,
-    should_show_whats_new,
 )
 from vibe.cli.update_notifier.update import do_update
 from vibe.core.agent_loop import AgentLoop, TeleportError
@@ -363,7 +358,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._last_escape_time: float | None = None
         self._quit_manager = QuitManager(self)
         self._banner: Banner | None = None
-        self._whats_new_message: WhatsNewMessage | None = None
         self._cached_messages_area: Widget | None = None
         self._cached_chat: ChatScroll | None = None
         self._cached_loading_area: Widget | None = None
@@ -470,7 +464,6 @@ class VibeApp(App):  # noqa: PLR0904
         await self._resolve_plan()
         await self._show_dangerous_directory_warning()
         await self._resume_history_from_messages()
-        await self._check_and_show_whats_new()
         self._schedule_update_notification()
 
         self.call_after_refresh(self._refresh_banner)
@@ -548,10 +541,6 @@ class VibeApp(App):  # noqa: PLR0904
     ) -> None:
         if self._banner:
             self._banner.freeze_animation()
-
-        if self._whats_new_message:
-            await self._whats_new_message.remove()
-            self._whats_new_message = None
 
         value = event.value.strip()
         if not value:
@@ -2453,32 +2442,6 @@ class VibeApp(App):  # noqa: PLR0904
                 f"⚠ WARNING: {reason}\n\nRunning in this location is not recommended."
             )
             await self._mount_and_scroll(WarningMessage(warning, show_border=False))
-
-    async def _check_and_show_whats_new(self) -> None:
-        if self._update_cache_repository is None:
-            return
-
-        if not await should_show_whats_new(
-            self._current_version, self._update_cache_repository
-        ):
-            return
-
-        content = load_whats_new_content()
-        if content is not None:
-            whats_new_message = WhatsNewMessage(content)
-            plan_offer = plan_offer_cta(self._plan_info)
-            if plan_offer is not None:
-                whats_new_message = WhatsNewMessage(f"{content}\n\n{plan_offer}")
-            if self._history_widget_indices:
-                whats_new_message.add_class("after-history")
-            messages_area = self._cached_messages_area or self.query_one("#messages")
-            chat = self._cached_chat or self.query_one("#chat", ChatScroll)
-            should_anchor = chat.is_at_bottom
-            await chat.mount(whats_new_message, after=messages_area)
-            self._whats_new_message = whats_new_message
-            if should_anchor:
-                chat.anchor()
-        await mark_version_as_seen(self._current_version, self._update_cache_repository)
 
     async def _resolve_plan(self) -> None:
         if self._plan_offer_gateway is None:
