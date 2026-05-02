@@ -9,7 +9,7 @@ from rich.console import Console
 import tomli_w
 
 from vibe.cli.textual_ui.app import StartupOptions, run_textual_ui
-from vibe.core.agent_loop import AgentLoop, TeleportError
+from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents.models import BuiltinAgentName
 from vibe.core.config import (
     MissingAPIKeyError,
@@ -212,7 +212,6 @@ def run_cli(args: argparse.Namespace) -> None:
                     output_format=output_format,
                     previous_messages=loaded_session[0] if loaded_session else None,
                     agent_name=initial_agent_name,
-                    teleport=args.teleport and config.vibe_code_enabled,
                     headless=True,
                     hook_config_result=hook_config_result,
                 )
@@ -221,9 +220,6 @@ def run_cli(args: argparse.Namespace) -> None:
                 sys.exit(0)
             except ConversationLimitException as e:
                 print(e, file=sys.stderr)
-                sys.exit(1)
-            except TeleportError as e:
-                print(f"Teleport error: {e}", file=sys.stderr)
                 sys.exit(1)
             except RuntimeError as e:
                 print(f"Error: {e}", file=sys.stderr)
@@ -244,7 +240,6 @@ def run_cli(args: argparse.Namespace) -> None:
                 agent_loop=agent_loop,
                 startup=StartupOptions(
                     initial_prompt=args.initial_prompt or stdin_prompt,
-                    teleport_on_start=args.teleport,
                     show_resume_picker=args.resume is True,
                 ),
             )

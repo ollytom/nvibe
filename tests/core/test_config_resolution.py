@@ -692,6 +692,7 @@ class TestMistralBrowserAuthConfig:
 
         assert provider.supports_browser_sign_in is False
 
+
 class TestCompactionModel:
     def test_get_compaction_model_returns_active_when_unset(self) -> None:
         cfg = build_test_vibe_config()

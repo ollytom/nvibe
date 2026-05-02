@@ -6,20 +6,16 @@ from contextlib import aclosing
 from pydantic import BaseModel
 
 from vibe import __version__
-from vibe.core.agent_loop import AgentLoop, TeleportError
+from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents.models import BuiltinAgentName
 from vibe.core.config import VibeConfig
 from vibe.core.hooks.models import HookConfigResult
 from vibe.core.logger import logger
 from vibe.core.output_formatters import create_formatter
-from vibe.core.teleport.types import (
-    TeleportPushRequiredEvent,
-    TeleportPushResponseEvent,
-)
 from vibe.core.types import AssistantEvent, LLMMessage, OutputFormat, Role
 from vibe.core.utils import ConversationLimitException
 
-__all__ = ["TeleportError", "run_programmatic"]
+__all__ = ["run_programmatic"]
 
 
 class ClientMetadata(BaseModel):
@@ -30,7 +26,7 @@ class ClientMetadata(BaseModel):
 _DEFAULT_CLIENT_METADATA = ClientMetadata(name="vibe_programmatic", version=__version__)
 
 
-def run_programmatic(  # noqa: PLR0913, PLR0917
+def run_programmatic(
     config: VibeConfig,
     prompt: str,
     max_turns: int | None = None,
@@ -39,7 +35,6 @@ def run_programmatic(  # noqa: PLR0913, PLR0917
     previous_messages: list[LLMMessage] | None = None,
     agent_name: str = BuiltinAgentName.AUTO_APPROVE,
     client_metadata: ClientMetadata = _DEFAULT_CLIENT_METADATA,
-    teleport: bool = False,
     headless: bool = False,
     hook_config_result: HookConfigResult | None = None,
 ) -> str | None:
@@ -73,24 +68,11 @@ def run_programmatic(  # noqa: PLR0913, PLR0917
                 "Loaded %d messages from previous session", len(non_system_messages)
             )
 
-        if teleport and config.vibe_code_enabled:
-            gen = agent_loop.teleport_to_vibe_code(prompt or None)
-            async for event in gen:
+        async with aclosing(agent_loop.act(prompt)) as events:
+            async for event in events:
                 formatter.on_event(event)
-                if isinstance(event, TeleportPushRequiredEvent):
-                    next_event = await gen.asend(
-                        TeleportPushResponseEvent(approved=True)
-                    )
-                    formatter.on_event(next_event)
-        else:
-            async with aclosing(agent_loop.act(prompt)) as events:
-                async for event in events:
-                    formatter.on_event(event)
-                    if (
-                        isinstance(event, AssistantEvent)
-                        and event.stopped_by_middleware
-                    ):
-                        raise ConversationLimitException(event.content)
+                if isinstance(event, AssistantEvent) and event.stopped_by_middleware:
+                    raise ConversationLimitException(event.content)
 
         return formatter.finalize()
 

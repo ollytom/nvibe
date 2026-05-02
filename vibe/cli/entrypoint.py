@@ -90,9 +90,6 @@ def parse_arguments() -> argparse.Namespace:
         "Use this for non-interactive automation.",
     )
 
-    # Feature flag for teleport, not exposed to the user yet
-    parser.add_argument("--teleport", action="store_true", help=argparse.SUPPRESS)
-
     continuation_group = parser.add_mutually_exclusive_group()
     continuation_group.add_argument(
         "-c",

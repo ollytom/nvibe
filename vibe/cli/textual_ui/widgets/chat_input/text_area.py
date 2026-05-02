@@ -325,10 +325,7 @@ class ChatTextArea(TextArea):
 
     @property
     def mode_characters(self) -> set[InputMode]:
-        chars: set[InputMode] = {"!", "/"}
-        if self._command_registry.has_command("teleport"):
-            chars.add("&")
-        return chars
+        return {"!", "/"}
 
     @property
     def input_mode(self) -> InputMode:

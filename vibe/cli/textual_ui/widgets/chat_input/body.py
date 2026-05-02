@@ -74,8 +74,6 @@ class ChatInputBody(Widget):
             return "!", text[1:]
         elif text.startswith("/"):
             return "/", text[1:]
-        elif text.startswith("&") and self._command_registry.has_command("teleport"):
-            return "&", text[1:]
         else:
             return ">", text
 

@@ -13,7 +13,6 @@ import subprocess
 import time
 from typing import Any, ClassVar, assert_never, cast
 from weakref import WeakKeyDictionary
-import webbrowser
 
 from pydantic import BaseModel
 from rich import print as rprint
@@ -79,7 +78,6 @@ from vibe.cli.textual_ui.widgets.proxy_setup_app import ProxySetupApp
 from vibe.cli.textual_ui.widgets.question_app import QuestionApp
 from vibe.cli.textual_ui.widgets.rewind_app import RewindApp
 from vibe.cli.textual_ui.widgets.session_picker import SessionPickerApp
-from vibe.cli.textual_ui.widgets.teleport_message import TeleportMessage
 from vibe.cli.textual_ui.widgets.thinking_picker import ThinkingPickerApp
 from vibe.cli.textual_ui.widgets.tools import ToolResultMessage
 from vibe.cli.textual_ui.windowing import (
@@ -102,7 +100,7 @@ from vibe.cli.update_notifier import (
     get_update_if_available,
 )
 from vibe.cli.update_notifier.update import do_update
-from vibe.core.agent_loop import AgentLoop, TeleportError
+from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents import AgentProfile
 from vibe.core.autocompletion.path_prompt_adapter import render_path_prompt
 from vibe.core.config import VibeConfig
@@ -119,23 +117,9 @@ from vibe.core.session.resume_sessions import (
 )
 from vibe.core.session.session_loader import SessionLoader
 from vibe.core.skills.manager import SkillManager
-from vibe.core.teleport.types import (
-    TeleportAuthCompleteEvent,
-    TeleportAuthRequiredEvent,
-    TeleportCheckingGitEvent,
-    TeleportCompleteEvent,
-    TeleportFetchingUrlEvent,
-    TeleportPushingEvent,
-    TeleportPushRequiredEvent,
-    TeleportPushResponseEvent,
-    TeleportStartingWorkflowEvent,
-    TeleportWaitingForGitHubEvent,
-)
 from vibe.core.tools.builtins.ask_user_question import (
     AskUserQuestionArgs,
     AskUserQuestionResult,
-    Choice,
-    Question,
 )
 from vibe.core.tools.connectors import ConnectorRegistry, connectors_enabled
 from vibe.core.tools.mcp_settings import persist_mcp_toggle
@@ -272,7 +256,6 @@ async def prune_oldest_children(
 @dataclass(frozen=True, slots=True)
 class StartupOptions:
     initial_prompt: str | None = None
-    teleport_on_start: bool = False
     show_resume_picker: bool = False
 
 
@@ -351,9 +334,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._plan_offer_gateway = plan_offer_gateway
         opts = startup or StartupOptions()
         self._initial_prompt = opts.initial_prompt
-        self._teleport_on_start = (
-            opts.teleport_on_start and self.agent_loop.base_config.vibe_code_enabled
-        )
         self._show_resume_picker = opts.show_resume_picker
         self._last_escape_time: float | None = None
         self._quit_manager = QuitManager(self)
@@ -380,7 +360,6 @@ class VibeApp(App):  # noqa: PLR0904
 
     def _get_command_availability_context(self) -> CommandAvailabilityContext:
         return CommandAvailabilityContext(
-            vibe_code_enabled=self.agent_loop.base_config.vibe_code_enabled,
             is_active_model_mistral=self.config.is_active_model_mistral(),
             plan_info=self._plan_info,
         )
@@ -473,7 +452,7 @@ class VibeApp(App):  # noqa: PLR0904
 
         if self._show_resume_picker:
             self.run_worker(self._show_session_picker(), exclusive=False)
-        elif self._initial_prompt or self._teleport_on_start:
+        elif self._initial_prompt:
             self.call_after_refresh(self._process_initial_prompt)
 
         gc.collect()
@@ -520,11 +499,7 @@ class VibeApp(App):  # noqa: PLR0904
                 pass
 
     def _process_initial_prompt(self) -> None:
-        if self._teleport_on_start and self.commands.has_command("teleport"):
-            self.run_worker(
-                self._handle_teleport_command(self._initial_prompt), exclusive=False
-            )
-        elif self._initial_prompt:
+        if self._initial_prompt:
             self.run_worker(
                 self._handle_user_message(self._initial_prompt), exclusive=False
             )
@@ -554,10 +529,6 @@ class VibeApp(App):  # noqa: PLR0904
 
         if value.startswith("!"):
             await self._handle_bash_command(value[1:])
-            return
-
-        if value.startswith("&") and self.commands.has_command("teleport"):
-            await self._handle_teleport_command(value[1:])
             return
 
         if await self._handle_command(value):
@@ -1204,119 +1175,6 @@ class VibeApp(App):  # noqa: PLR0904
             "2. Then use /compact to summarize the remaining conversation\n\n"
             "This will free up context space so you can continue working."
         )
-
-    async def _teleport_command(self, **kwargs: Any) -> None:
-        await self._handle_teleport_command(show_message=False)
-
-    async def _handle_teleport_command(
-        self, value: str | None = None, show_message: bool = True
-    ) -> None:
-        has_history = any(msg.role != Role.system for msg in self.agent_loop.messages)
-        if not value:
-            if show_message:
-                await self._mount_and_scroll(UserMessage("/teleport"))
-            if not has_history:
-                await self._mount_and_scroll(
-                    ErrorMessage(
-                        "No conversation history to teleport.",
-                        collapsed=self._tools_collapsed,
-                    )
-                )
-                return
-        elif show_message:
-            await self._mount_and_scroll(UserMessage(value))
-        self.run_worker(self._teleport(value), exclusive=False)
-
-    async def _teleport(self, prompt: str | None = None) -> None:
-        loading_area = self._cached_loading_area or self.query_one(
-            "#loading-area-content"
-        )
-        loading = LoadingWidget()
-        await loading_area.mount(loading)
-
-        teleport_msg = TeleportMessage()
-        await self._mount_and_scroll(teleport_msg)
-
-        if self._remote_manager.is_active:
-            await loading.remove()
-            await self._mount_and_scroll(
-                ErrorMessage(
-                    "Teleport is not available for remote sessions.",
-                    collapsed=self._tools_collapsed,
-                )
-            )
-            return
-
-        try:
-            gen = self.agent_loop.teleport_to_vibe_code(prompt)
-            async for event in gen:
-                match event:
-                    case TeleportCheckingGitEvent():
-                        teleport_msg.set_status("Preparing workspace...")
-                    case TeleportPushRequiredEvent(
-                        unpushed_count=count, branch_not_pushed=branch_not_pushed
-                    ):
-                        await loading.remove()
-                        response = await self._ask_push_approval(
-                            count, branch_not_pushed
-                        )
-                        await loading_area.mount(loading)
-                        teleport_msg.set_status("Teleporting...")
-                        next_event = await gen.asend(response)
-                        if isinstance(next_event, TeleportPushingEvent):
-                            teleport_msg.set_status("Syncing with remote...")
-                    case TeleportPushingEvent():
-                        teleport_msg.set_status("Syncing with remote...")
-                    case TeleportStartingWorkflowEvent():
-                        teleport_msg.set_status("Teleporting...")
-                    case TeleportWaitingForGitHubEvent(message=msg):
-                        teleport_msg.set_status(msg or "Connecting to GitHub...")
-                    case TeleportAuthRequiredEvent(oauth_url=url, message=msg):
-                        webbrowser.open(url)
-                        teleport_msg.set_status(msg or "Authorizing GitHub...")
-                    case TeleportAuthCompleteEvent():
-                        teleport_msg.set_status("GitHub authorized")
-                    case TeleportFetchingUrlEvent():
-                        teleport_msg.set_status("Finalizing...")
-                    case TeleportCompleteEvent(url=url):
-                        teleport_msg.set_complete(url)
-        except TeleportError as e:
-            await teleport_msg.remove()
-            await self._mount_and_scroll(
-                ErrorMessage(str(e), collapsed=self._tools_collapsed)
-            )
-        finally:
-            if loading.parent:
-                await loading.remove()
-
-    async def _ask_push_approval(
-        self, count: int, branch_not_pushed: bool
-    ) -> TeleportPushResponseEvent:
-        if branch_not_pushed:
-            question = "Your branch doesn't exist on remote. Push to continue?"
-        else:
-            word = f"commit{'s' if count != 1 else ''}"
-            question = f"You have {count} unpushed {word}. Push to continue?"
-        push_label = "Push and continue"
-        result = await self._user_input_callback(
-            AskUserQuestionArgs(
-                questions=[
-                    Question(
-                        question=question,
-                        header="Push",
-                        options=[Choice(label=push_label), Choice(label="Cancel")],
-                        hide_other=True,
-                    )
-                ]
-            )
-        )
-        ok = (
-            isinstance(result, AskUserQuestionResult)
-            and not result.cancelled
-            and bool(result.answers)
-            and result.answers[0].answer == push_label
-        )
-        return TeleportPushResponseEvent(approved=ok)
 
     async def _interrupt_agent_loop(self) -> None:
         if not self._agent_running or self._interrupt_requested:

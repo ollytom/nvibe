@@ -11,17 +11,8 @@ ALT_KEY = "⌥" if sys.platform == "darwin" else "Alt"
 
 @dataclass(frozen=True)
 class CommandAvailabilityContext:
-    vibe_code_enabled: bool = False
     is_active_model_mistral: bool = False
     plan_info: PlanInfo | None = None
-
-    def is_teleport_available(self) -> bool:
-        return (
-            self.vibe_code_enabled
-            and self.is_active_model_mistral
-            and self.plan_info is not None
-            and self.plan_info.is_teleport_eligible()
-        )
 
 
 CommandAvailability = Callable[[CommandAvailabilityContext], bool]
@@ -106,12 +97,6 @@ class CommandRegistry:
                 aliases=frozenset(["/status"]),
                 description="Display agent statistics",
                 handler="_show_status",
-            ),
-            "teleport": Command(
-                aliases=frozenset(["/teleport"]),
-                description="Teleport session to Vibe Code",
-                handler="_teleport_command",
-                is_available=CommandAvailabilityContext.is_teleport_available,
             ),
             "proxy-setup": Command(
                 aliases=frozenset(["/proxy-setup"]),

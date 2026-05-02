@@ -12,7 +12,7 @@ import os
 import threading
 from threading import Thread
 import time
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -108,18 +108,6 @@ from vibe.core.utils import (
     is_user_cancellation_event,
 )
 
-try:
-    from vibe.core.teleport.teleport import TeleportService as _TeleportService
-
-    _TELEPORT_AVAILABLE = True
-except ImportError:
-    _TELEPORT_AVAILABLE = False
-    _TeleportService = None
-
-if TYPE_CHECKING:
-    from vibe.core.teleport.teleport import TeleportService
-    from vibe.core.teleport.types import TeleportPushResponseEvent, TeleportYieldEvent
-
 
 class ToolExecutionResponse(StrEnum):
     SKIP = auto()
@@ -142,10 +130,6 @@ class AgentLoopStateError(AgentLoopError):
 
 class AgentLoopLLMResponseError(AgentLoopError):
     """Raised when LLM response is malformed or missing expected data."""
-
-
-class TeleportError(AgentLoopError):
-    """Raised when teleport to Vibe Code fails."""
 
 
 def _should_raise_rate_limit_error(e: Exception) -> bool:
@@ -296,7 +280,6 @@ class AgentLoop:
             save_messages=self._save_messages,
             reset_session=self._reset_session,
         )
-        self._teleport_service: TeleportService | None = None
 
         Thread(
             target=migrate_sessions_entrypoint,
@@ -491,57 +474,6 @@ class AgentLoop:
             msg, client_message_id=client_message_id
         ):
             yield event
-
-    @property
-    def teleport_service(self) -> TeleportService:
-        if not _TELEPORT_AVAILABLE:
-            raise TeleportError(
-                "Teleport requires git to be installed. "
-                "Please install git and try again."
-            )
-
-        if self._teleport_service is None:
-            if _TeleportService is None:
-                raise TeleportError("_TeleportService is unexpectedly None")
-            self._teleport_service = _TeleportService(
-                session_logger=self.session_logger,
-                vibe_code_base_url=self.config.vibe_code_base_url,
-                vibe_code_workflow_id=self.config.vibe_code_workflow_id,
-                vibe_code_api_key=self.config.vibe_code_api_key,
-                vibe_code_task_queue=self.config.vibe_code_task_queue,
-                vibe_config=self._base_config,
-            )
-        return self._teleport_service
-
-    @requires_init
-    async def teleport_to_vibe_code(
-        self, prompt: str | None
-    ) -> AsyncGenerator[TeleportYieldEvent, TeleportPushResponseEvent | None]:
-        from vibe.core.teleport.errors import ServiceTeleportError
-        from vibe.core.teleport.nuage import TeleportSession
-
-        session = TeleportSession(
-            metadata={
-                "agent": self.agent_profile.name,
-                "model": self.config.active_model,
-                "stats": self.stats.model_dump(),
-            },
-            messages=[msg.model_dump(exclude_none=True) for msg in self.messages[1:]],
-        )
-        try:
-            async with self.teleport_service:
-                gen = self.teleport_service.execute(prompt=prompt, session=session)
-                response: TeleportPushResponseEvent | None = None
-                while True:
-                    try:
-                        event = await gen.asend(response)
-                        response = yield event
-                    except StopAsyncIteration:
-                        break
-        except ServiceTeleportError as e:
-            raise TeleportError(str(e)) from e
-        finally:
-            self._teleport_service = None
 
     def _setup_middleware(self) -> None:
         """Configure middleware pipeline for this conversation."""
