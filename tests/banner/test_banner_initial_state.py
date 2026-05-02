@@ -17,7 +17,6 @@ def _make_mock_config(
     config.models = [active_model]
     config.mcp_servers = []
     config.connectors = []
-    config.disable_welcome_banner_animation = False
     config.get_active_model.return_value = ModelConfig(
         name=active_model, provider="mistral", alias=active_model, thinking=thinking
     )

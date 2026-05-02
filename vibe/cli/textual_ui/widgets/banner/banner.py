@@ -9,7 +9,6 @@ from textual.reactive import reactive
 from textual.widgets import Static
 
 from vibe import __version__
-from vibe.cli.textual_ui.widgets.banner.petit_chat import PetitChat
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.core.config import VibeConfig
 from vibe.core.skills.manager import SkillManager
@@ -50,12 +49,9 @@ class Banner(Static):
             connectors_count=connectors_count,
             plan_description=None,
         )
-        self._animated = not config.disable_welcome_banner_animation
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="banner-container"):
-            yield PetitChat(animate=self._animated)
-
             with Vertical(id="banner-info"):
                 with Horizontal(classes="banner-line"):
                     yield NoMarkupStatic("Mistral Vibe", id="banner-brand")
@@ -83,8 +79,7 @@ class Banner(Static):
         self.query_one("#banner-user-plan", NoMarkupStatic).update(self._format_plan())
 
     def freeze_animation(self) -> None:
-        if self._animated:
-            self.query_one(PetitChat).freeze_animation()
+        pass
 
     def set_state(
         self,

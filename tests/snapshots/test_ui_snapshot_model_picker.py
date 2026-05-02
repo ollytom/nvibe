@@ -23,10 +23,7 @@ def _model_picker_config():
         ModelConfig(name="devstral", provider="llamacpp", alias="local"),
     ]
     return build_test_vibe_config(
-        models=models,
-        active_model="devstral",
-        disable_welcome_banner_animation=True,
-        displayed_workdir="/test/workdir",
+        models=models, active_model="devstral", displayed_workdir="/test/workdir"
     )
 
 

@@ -21,9 +21,7 @@ def default_config() -> VibeConfig:
     - Forces a value for the displayed workdir
     - Hides the chat input cursor (as the blinking animation is not deterministic).
     """
-    return build_test_vibe_config(
-        disable_welcome_banner_animation=True, displayed_workdir="/test/workdir"
-    )
+    return build_test_vibe_config(displayed_workdir="/test/workdir")
 
 
 class BaseSnapshotTestApp(VibeApp):

@@ -963,10 +963,6 @@ ContextProgress {
     width: auto;
 }
 
-.banner-chat {
-    width: auto;
-}
-
 #banner-info {
     width: auto;
     height: auto;
@@ -1011,11 +1007,6 @@ ContextProgress {
 .banner-cmd {
     color: ansi_cyan;
     width: auto;
-}
-
-.petit-chat {
-    color: ansi_default;
-    width: 12;
 }
 
 .whats-new-message {
