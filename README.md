@@ -17,41 +17,6 @@ If installing from source, run from the project root:
 
 		uv tool install .
 
-## Table of Contents
-
-- [Features](#features)
-  - [Built-in Agents](#built-in-agents)
-  - [Subagents and Task Delegation](#subagents-and-task-delegation)
-  - [Interactive User Questions](#interactive-user-questions)
-- [Terminal Requirements](#terminal-requirements)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-  - [Interactive Mode](#interactive-mode)
-  - [Trust Folder System](#trust-folder-system)
-  - [Programmatic Mode](#programmatic-mode)
-- [Voice Mode](#voice-mode)
-- [Slash Commands](#slash-commands)
-  - [Built-in Slash Commands](#built-in-slash-commands)
-  - [Custom Slash Commands via Skills](#custom-slash-commands-via-skills)
-- [Skills System](#skills-system)
-  - [Creating Skills](#creating-skills)
-  - [Skill Discovery](#skill-discovery)
-  - [Managing Skills](#managing-skills)
-- [Configuration](#configuration)
-  - [Configuration File Location](#configuration-file-location)
-  - [API Key Configuration](#api-key-configuration)
-  - [Custom System Prompts](#custom-system-prompts)
-  - [Custom Agent Configurations](#custom-agent-configurations)
-  - [Tool Management](#tool-management)
-  - [MCP Server Configuration](#mcp-server-configuration)
-  - [Session Management](#session-management)
-  - [Update Settings](#update-settings)
-  - [Custom Vibe Home Directory](#custom-vibe-home-directory)
-- [Editors/IDEs](#editorsides)
-- [Resources](#resources)
-- [Data collection & usage](#data-collection--usage)
-- [License](#license)
-
 ## Features
 
 - **Interactive Chat**: A conversational AI agent that understands your requests and breaks down complex tasks.
@@ -590,14 +555,6 @@ This affects where Vibe looks for:
 ## Editors/IDEs
 
 Mistral Vibe can be used in text editors and IDEs that support [Agent Client Protocol](https://agentclientprotocol.com/overview/clients). See the [ACP Setup documentation](docs/acp-setup.md) for setup instructions for various editors and IDEs.
-
-## Resources
-
-- [CHANGELOG](CHANGELOG.md) - See what's new in each version
-- [CONTRIBUTING](CONTRIBUTING.md) - Guidelines for feature requests, feedback and bug reports
-
-## Data collection & usage
-
 
 ## License
 
