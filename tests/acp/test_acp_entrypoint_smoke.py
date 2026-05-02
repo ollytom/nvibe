@@ -3,18 +3,15 @@ from __future__ import annotations
 import asyncio
 import asyncio.subprocess as aio_subprocess
 import contextlib
-import io
 import os
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from acp import PROTOCOL_VERSION, Client, RequestError, connect_to_agent
 from acp.schema import ClientCapabilities, Implementation
-import pexpect
 import pytest
 
 from tests import TESTS_ROOT
-from tests.e2e.common import ansi_tolerant_pattern
 
 
 class _AcpSmokeClient(Client):
@@ -204,39 +201,6 @@ async def test_vibe_acp_initialize_exposes_terminal_auth_when_supported(
         assert terminal_auth["args"]
     finally:
         await _terminate_process(proc)
-
-
-@pytest.mark.timeout(15)
-def test_vibe_acp_setup_shows_onboarding_and_exits_on_cancel(
-    vibe_home_dir: Path,
-) -> None:
-    env = cast("os._Environ[str]", _build_env(vibe_home_dir, include_api_key=False))
-    env["TERM"] = "xterm-256color"
-
-    captured = io.StringIO()
-    child = pexpect.spawn(
-        "uv",
-        ["run", "vibe-acp", "--setup"],
-        cwd=str(TESTS_ROOT.parent),
-        env=env,
-        encoding="utf-8",
-        timeout=10,
-        dimensions=(36, 120),
-    )
-    child.logfile_read = captured
-
-    try:
-        child.expect(ansi_tolerant_pattern("Welcome to Mistral Vibe"), timeout=10)
-        child.sendcontrol("c")
-        child.expect(pexpect.EOF, timeout=10)
-    finally:
-        if child.isalive():
-            child.terminate(force=True)
-        if not child.closed:
-            child.close()
-
-    output = captured.getvalue()
-    assert "Setup cancelled" in output
 
 
 @pytest.mark.asyncio

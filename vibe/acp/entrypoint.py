@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import argparse
-from dataclasses import dataclass
 import os
 import sys
 
 import tomli_w
 
-from vibe import __version__
 from vibe.core.config import VibeConfig
 from vibe.core.config.harness_files import (
     get_harness_files_manager,
@@ -20,21 +17,6 @@ from vibe.core.paths import HISTORY_FILE
 sys.stdout.reconfigure(line_buffering=True)  # pyright: ignore[reportAttributeAccessIssue]
 sys.stderr.reconfigure(line_buffering=True)  # pyright: ignore[reportAttributeAccessIssue]
 sys.stdin.reconfigure(line_buffering=True)  # pyright: ignore[reportAttributeAccessIssue]
-
-
-@dataclass
-class Arguments:
-    setup: bool
-
-
-def parse_arguments() -> Arguments:
-    parser = argparse.ArgumentParser(description="Run Mistral Vibe in ACP mode")
-    parser.add_argument(
-        "-v", "--version", action="version", version=f"%(prog)s {__version__}"
-    )
-    parser.add_argument("--setup", action="store_true", help="Setup API key and exit")
-    args = parser.parse_args()
-    return Arguments(setup=args.setup)
 
 
 def bootstrap_config_files() -> None:
@@ -79,14 +61,9 @@ def main() -> None:
 
     from vibe.acp.acp_agent_loop import run_acp_server
     from vibe.core.config import load_dotenv_values
-    from vibe.setup.onboarding import run_onboarding
 
     load_dotenv_values()
     bootstrap_config_files()
-    args = parse_arguments()
-    if args.setup:
-        run_onboarding()
-        sys.exit(0)
 
     run_acp_server()
 

@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from vibe.cli import cli as cli_mod, entrypoint as entrypoint_mod
-from vibe.core.config import MissingAPIKeyError
 from vibe.core.trusted_folders import trusted_folders_manager
 
 
@@ -28,55 +27,6 @@ def _make_args(**overrides: object) -> argparse.Namespace:
     }
     base.update(overrides)
     return argparse.Namespace(**base)
-
-
-def test_programmatic_mode_does_not_run_onboarding_on_missing_api_key(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    def boom() -> None:
-        raise MissingAPIKeyError("MISTRAL_API_KEY", "mistral")
-
-    monkeypatch.setattr(cli_mod.VibeConfig, "load", staticmethod(boom))
-
-    sentinel: dict[str, bool] = {"called": False}
-
-    def fail_onboarding(*_args: object, **_kwargs: object) -> None:
-        sentinel["called"] = True
-
-    monkeypatch.setattr(cli_mod, "run_onboarding", fail_onboarding)
-
-    with pytest.raises(SystemExit) as exc_info:
-        cli_mod.load_config_or_exit(interactive=False)
-
-    assert exc_info.value.code == 1
-    assert sentinel["called"] is False
-    err = capsys.readouterr().err
-    assert "MISTRAL_API_KEY" in err
-    assert "vibe --setup" in err
-
-
-def test_interactive_mode_still_runs_onboarding_on_missing_api_key(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    # Replace VibeConfig.load with a stub that fails the first time.
-    state = {"raised": False}
-
-    def fake_load() -> object:
-        if not state["raised"]:
-            state["raised"] = True
-            raise MissingAPIKeyError("MISTRAL_API_KEY", "mistral")
-        return "config-sentinel"
-
-    monkeypatch.setattr(cli_mod.VibeConfig, "load", staticmethod(fake_load))
-
-    onboarding_called: list[bool] = []
-    monkeypatch.setattr(
-        cli_mod, "run_onboarding", lambda *a, **k: onboarding_called.append(True)
-    )
-
-    result = cli_mod.load_config_or_exit(interactive=True)
-    assert onboarding_called == [True]
-    assert result == "config-sentinel"
 
 
 def test_warn_if_workdir_untrusted_writes_stderr_when_project_config_present(

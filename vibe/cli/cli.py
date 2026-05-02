@@ -55,7 +55,7 @@ def load_config_or_exit(*, interactive: bool) -> VibeConfig:
     except MissingAPIKeyError as e:
         print(
             f"Error: {e}. Set the environment variable (e.g. in ~/.vibe/.env "
-            "or your shell), or run `vibe --setup` once interactively.",
+            "or your shell).",
             file=sys.stderr,
         )
         sys.exit(1)

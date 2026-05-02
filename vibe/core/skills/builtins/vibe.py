@@ -317,7 +317,6 @@ vibe --trust                        # Trust cwd for this invocation only (not pe
 vibe -c / --continue                # Continue most recent session
 vibe --resume [SESSION_ID]          # Resume a specific session
 vibe -v / --version                 # Show version
-vibe --setup                        # Run onboarding/setup
 vibe --max-turns N                  # Max assistant turns (programmatic mode)
 vibe --max-price DOLLARS            # Max cost limit (programmatic mode)
 vibe --enabled-tools TOOL           # Enable specific tools (repeatable)
