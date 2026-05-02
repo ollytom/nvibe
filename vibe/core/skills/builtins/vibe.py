@@ -367,7 +367,7 @@ Custom agents are TOML files in `~/.vibe/agents/NAME.toml`.
 - `/terminal-setup` - Configure Shift+Enter for newlines
 - `/proxy-setup` - Configure proxy and SSL certificate settings
 
-- `/data-retention` - Show data retention information
+
 - `/teleport` - Teleport session to Vibe Code (only available when Vibe Code is enabled)
 - `/exit` - Exit the application
 

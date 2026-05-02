@@ -72,9 +72,5 @@ def _build_commands() -> dict[str, AcpCommand]:
             input_hint="KEY value to set, KEY to unset, or empty for help",
         ),
 
-        "data-retention": AcpCommand(
-            name="data-retention",
-            description="Show data retention information",
-            handler="_handle_data_retention",
-        ),
+
     }

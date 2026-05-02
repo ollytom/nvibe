@@ -114,7 +114,6 @@ from vibe.core.config import (
     VibeConfig,
     load_dotenv_values,
 )
-from vibe.core.data_retention import DATA_RETENTION_MESSAGE
 from vibe.core.hooks.config import load_hooks_from_fs
 from vibe.core.proxy_setup import (
     ProxySetupError,
@@ -1163,10 +1162,7 @@ class VibeAcpAgentLoop(AcpAgent):
 
 
 
-    async def _handle_data_retention(
-        self, session: AcpSessionLoop, text_prompt: str, message_id: str
-    ) -> PromptResponse:
-        return await self._command_reply(session, DATA_RETENTION_MESSAGE, message_id)
+
 
 
 def run_acp_server() -> None:

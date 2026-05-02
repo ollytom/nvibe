@@ -26,7 +26,7 @@ class TestCommandRegistry:
         assert registry.get_command_name("/connectors") == "mcp"
         assert registry.get_command_name("/clear") == "clear"
         assert registry.get_command_name("/exit") == "exit"
-        assert registry.get_command_name("/data-retention") == "data-retention"
+
 
     def test_get_command_name_normalizes_input(self) -> None:
         registry = CommandRegistry()
@@ -117,9 +117,5 @@ class TestCommandRegistry:
         result = registry.parse_command("/connectors filesystem")
         assert result == ("mcp", registry.commands["mcp"], "filesystem")
 
-    def test_data_retention_command_registration(self) -> None:
-        registry = CommandRegistry()
-        result = registry.parse_command("/data-retention")
-        assert result is not None
-        _, cmd, _ = result
-        assert cmd.handler == "_show_data_retention"
+
+

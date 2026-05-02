@@ -142,11 +142,7 @@ class CommandRegistry:
                 description="Rewind to a previous message",
                 handler="_start_rewind_mode",
             ),
-            "data-retention": Command(
-                aliases=frozenset(["/data-retention"]),
-                description="Show data retention information",
-                handler="_show_data_retention",
-            ),
+
         }
 
     @property

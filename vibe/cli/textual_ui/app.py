@@ -112,7 +112,6 @@ from vibe.core.agent_loop import AgentLoop, TeleportError
 from vibe.core.agents import AgentProfile
 from vibe.core.autocompletion.path_prompt_adapter import render_path_prompt
 from vibe.core.config import VibeConfig
-from vibe.core.data_retention import DATA_RETENTION_MESSAGE
 from vibe.core.hooks.models import HookStartEvent
 from vibe.core.log_reader import LogReader
 from vibe.core.logger import logger
@@ -1488,8 +1487,7 @@ class VibeApp(App):  # noqa: PLR0904
             return
         await self._switch_to_proxy_setup_app()
 
-    async def _show_data_retention(self, **kwargs: Any) -> None:
-        await self._mount_and_scroll(UserCommandMessage(DATA_RETENTION_MESSAGE))
+
 
     async def _show_session_picker(self, **kwargs: Any) -> None:
         cwd = str(Path.cwd())
