@@ -239,7 +239,6 @@ def run_cli(args: argparse.Namespace) -> None:
                 config,
                 agent_name=initial_agent_name,
                 enable_streaming=True,
-
                 defer_heavy_init=True,
                 hook_config_result=hook_config_result,
             )

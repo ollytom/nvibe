@@ -1281,7 +1281,6 @@ class AgentLoop:
             self.session_id, parent_session_id=old_session_id
         )
 
-
     async def fork(self, message_id: str | None = None) -> AgentLoop:
         messages = self._messages_for_fork(message_id)
         forked = AgentLoop(

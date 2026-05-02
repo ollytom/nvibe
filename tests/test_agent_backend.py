@@ -102,8 +102,3 @@ async def test_updates_tokens_stats_based_on_backend_response_streaming(
     [_ async for _ in agent.act("Hello")]
 
     assert agent.stats.context_tokens == 275
-
-
-
-
-

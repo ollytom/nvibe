@@ -259,10 +259,6 @@ class TestAvailableCommandsWithSkills:
         assert "hidden-skill" not in cmd_names
 
 
-
-
-
-
 class TestCommandCaseInsensitivity:
     @pytest.mark.asyncio
     async def test_uppercase_command(self, acp_agent_loop: VibeAcpAgentLoop) -> None:

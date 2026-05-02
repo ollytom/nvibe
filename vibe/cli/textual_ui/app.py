@@ -28,11 +28,6 @@ from textual.widgets import Static
 from vibe import __version__ as CORE_VERSION
 from vibe.cli.clipboard import copy_selection_to_clipboard, copy_text_to_clipboard
 from vibe.cli.commands import CommandAvailabilityContext, CommandRegistry
-from vibe.cli.narrator_manager import (
-    NarratorManager,
-    NarratorManagerPort,
-    NarratorState,
-)
 from vibe.cli.plan_offer.adapters.http_whoami_gateway import HttpWhoAmIGateway
 from vibe.cli.plan_offer.decide_plan_offer import (
     PlanInfo,
@@ -81,7 +76,6 @@ from vibe.cli.textual_ui.widgets.messages import (
     WhatsNewMessage,
 )
 from vibe.cli.textual_ui.widgets.model_picker import ModelPickerApp
-from vibe.cli.textual_ui.widgets.narrator_status import NarratorStatus
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.cli.textual_ui.widgets.path_display import PathDisplay
 from vibe.cli.textual_ui.widgets.proxy_setup_app import ProxySetupApp
@@ -91,7 +85,6 @@ from vibe.cli.textual_ui.widgets.session_picker import SessionPickerApp
 from vibe.cli.textual_ui.widgets.teleport_message import TeleportMessage
 from vibe.cli.textual_ui.widgets.thinking_picker import ThinkingPickerApp
 from vibe.cli.textual_ui.widgets.tools import ToolResultMessage
-from vibe.cli.textual_ui.widgets.voice_app import VoiceApp
 from vibe.cli.textual_ui.windowing import (
     HISTORY_RESUME_TAIL_MESSAGES,
     LOAD_MORE_BATCH_SIZE,
@@ -115,12 +108,8 @@ from vibe.cli.update_notifier import (
     should_show_whats_new,
 )
 from vibe.cli.update_notifier.update import do_update
-from vibe.cli.voice_manager import VoiceManager, VoiceManagerPort
-from vibe.cli.voice_manager.voice_manager_port import TranscribeState
 from vibe.core.agent_loop import AgentLoop, TeleportError
 from vibe.core.agents import AgentProfile
-from vibe.core.audio_player.audio_player import AudioPlayer
-from vibe.core.audio_recorder import AudioRecorder
 from vibe.core.autocompletion.path_prompt_adapter import render_path_prompt
 from vibe.core.config import VibeConfig
 from vibe.core.data_retention import DATA_RETENTION_MESSAGE
@@ -158,7 +147,6 @@ from vibe.core.tools.builtins.ask_user_question import (
 from vibe.core.tools.connectors import ConnectorRegistry, connectors_enabled
 from vibe.core.tools.mcp_settings import persist_mcp_toggle
 from vibe.core.tools.permissions import RequiredPermission
-from vibe.core.transcribe import make_transcribe_client
 from vibe.core.types import (
     AgentStats,
     ApprovalResponse,
@@ -208,7 +196,6 @@ class BottomApp(StrEnum):
     ThinkingPicker = auto()
     Rewind = auto()
     SessionPicker = auto()
-    Voice = auto()
 
 
 class ChatScroll(VerticalScroll):
@@ -330,17 +317,12 @@ class VibeApp(App):  # noqa: PLR0904
         current_version: str = CORE_VERSION,
         plan_offer_gateway: WhoAmIGateway | None = None,
         terminal_notifier: NotificationPort | None = None,
-        voice_manager: VoiceManagerPort | None = None,
-        narrator_manager: NarratorManagerPort | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self.scroll_sensitivity_y = 1.0
         self.agent_loop = agent_loop
         self._plan_info: PlanInfo | None = None
-        self._voice_manager: VoiceManagerPort = (
-            voice_manager or self._make_default_voice_manager()
-        )
         self._terminal_notifier = terminal_notifier or TextualNotificationAdapter(
             self,
             get_enabled=lambda: self.config.enable_notifications,
@@ -390,9 +372,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._log_reader = LogReader()
         self._debug_console: DebugConsole | None = None
         self._switch_agent_generation = 0
-        self._narrator_manager: NarratorManagerPort = (
-            narrator_manager or self._make_default_narrator_manager()
-        )
 
         self._rewind_mode = False
         self._rewind_highlighted_widget: UserMessage | None = None
@@ -436,7 +415,6 @@ class VibeApp(App):  # noqa: PLR0904
             yield VerticalGroup(id="messages")
 
         with Horizontal(id="loading-area"):
-            yield NarratorStatus(self._narrator_manager)
             yield Static(id="loading-area-content")
             yield FeedbackBar()
 
@@ -449,7 +427,6 @@ class VibeApp(App):  # noqa: PLR0904
                 agent_name=self.agent_loop.agent_profile.display_name.lower(),
                 skill_entries_getter=self._get_skill_entries,
                 file_watcher_for_autocomplete_getter=self._is_file_watcher_enabled,
-                voice_manager=self._voice_manager,
             )
 
         with Horizontal(id="bottom-bar"):
@@ -497,7 +474,6 @@ class VibeApp(App):  # noqa: PLR0904
         await self._resume_history_from_messages()
         await self._check_and_show_whats_new()
         self._schedule_update_notification()
-
 
         self.call_after_refresh(self._refresh_banner)
         self._show_hook_config_issues_once()
@@ -716,10 +692,6 @@ class VibeApp(App):  # noqa: PLR0904
         await self._handle_config_settings_closed(message.changes)
         await self._switch_to_input_app()
 
-    async def on_voice_app_config_closed(self, message: VoiceApp.ConfigClosed) -> None:
-        await self._handle_voice_settings_closed(message.changes)
-        await self._switch_to_input_app()
-
     async def _handle_config_settings_closed(
         self, changes: dict[str, str | bool]
     ) -> None:
@@ -730,41 +702,6 @@ class VibeApp(App):  # noqa: PLR0904
             await self._mount_and_scroll(
                 UserCommandMessage("Configuration closed (no changes saved).")
             )
-
-    async def _handle_voice_settings_closed(
-        self, changes: dict[str, str | bool]
-    ) -> None:
-        if not changes:
-            await self._mount_and_scroll(
-                UserCommandMessage("Voice settings closed (no changes saved).")
-            )
-            return
-
-        if "voice_mode_enabled" in changes:
-            current = self._voice_manager.is_enabled
-            desired = changes["voice_mode_enabled"]
-            if current != desired:
-                self._voice_manager.toggle_voice_mode()
-                pass
-                self.agent_loop.refresh_config()
-                if desired:
-                    await self._mount_and_scroll(
-                        UserCommandMessage(
-                            "Voice mode enabled. Press ctrl+r to start recording."
-                        )
-                    )
-                else:
-                    await self._mount_and_scroll(
-                        UserCommandMessage("Voice mode disabled.")
-                    )
-
-        non_voice_changes = {
-            k: v for k, v in changes.items() if k != "voice_mode_enabled"
-        }
-        if non_voice_changes:
-            VibeConfig.save_updates(non_voice_changes)
-            self.agent_loop.refresh_config()
-            self._narrator_manager.sync()
 
     async def on_model_picker_app_model_selected(
         self, message: ModelPickerApp.ModelSelected
@@ -1202,7 +1139,6 @@ class VibeApp(App):  # noqa: PLR0904
         self, events: AsyncGenerator[BaseEvent]
     ) -> None:
         async for event in events:
-            self._narrator_manager.on_turn_event(event)
             if isinstance(event, WaitingForInputEvent):
                 await self._remove_loading_widget()
                 if self._remote_manager.is_active:
@@ -1225,13 +1161,10 @@ class VibeApp(App):  # noqa: PLR0904
             await self._handle_agent_loop_init()
             await self._ensure_loading_widget()
             rendered_prompt = render_path_prompt(prompt, base_dir=Path.cwd())
-            self._narrator_manager.cancel()
-            self._narrator_manager.on_turn_start(rendered_prompt)
             async with aclosing(self.agent_loop.act(rendered_prompt)) as events:
                 await self._handle_agent_loop_events(events)
         except asyncio.CancelledError:
             await self._handle_turn_error()
-            self._narrator_manager.on_turn_cancel()
             raise
         except Exception as e:
             await self._handle_turn_error()
@@ -1242,13 +1175,11 @@ class VibeApp(App):  # noqa: PLR0904
                 return
 
             message = self._resolve_turn_error_message(e)
-            self._narrator_manager.on_turn_error(message)
 
             await self._mount_and_scroll(
                 ErrorMessage(message, collapsed=self._tools_collapsed)
             )
         finally:
-            self._narrator_manager.on_turn_end()
             self._agent_running = False
             self._interrupt_requested = False
             self._agent_task = None
@@ -1761,7 +1692,6 @@ class VibeApp(App):  # noqa: PLR0904
 
             await self.agent_loop.reload_with_initial_messages(base_config=base_config)
             await self._resolve_plan()
-            self._narrator_manager.sync()
 
             if self._banner:
                 self._banner.set_state(
@@ -1929,31 +1859,7 @@ class VibeApp(App):  # noqa: PLR0904
 
     async def _exit_app(self, **kwargs: Any) -> None:
         self._log_reader.shutdown()
-        await self._narrator_manager.close()
         self.exit(result=self._get_session_resume_info())
-
-    def _make_default_voice_manager(self) -> VoiceManager:
-        try:
-            model = self.config.get_active_transcribe_model()
-            provider = self.config.get_transcribe_provider_for_model(model)
-            transcribe_client = make_transcribe_client(provider, model)
-        except (ValueError, KeyError) as exc:
-            logger.error(
-                "Failed to initialize transcription, check transcribe model configuration",
-                exc_info=exc,
-            )
-            transcribe_client = None
-
-        return VoiceManager(
-            lambda: self.config,
-            audio_recorder=AudioRecorder(),
-            transcribe_client=transcribe_client,
-        )
-
-    async def _show_voice_settings(self, **kwargs: Any) -> None:
-        if self._current_bottom_app == BottomApp.Voice:
-            return
-        await self._switch_to_voice_app()
 
     async def _switch_from_input(self, widget: Widget, scroll: bool = False) -> None:
         bottom_container = self.query_one("#bottom-app-container")
@@ -1979,13 +1885,6 @@ class VibeApp(App):  # noqa: PLR0904
 
         await self._mount_and_scroll(UserCommandMessage("Configuration opened..."))
         await self._switch_from_input(ConfigApp(self.config))
-
-    async def _switch_to_voice_app(self) -> None:
-        if self._current_bottom_app == BottomApp.Voice:
-            return
-
-        await self._mount_and_scroll(UserCommandMessage("Voice settings opened..."))
-        await self._switch_from_input(VoiceApp(self.config))
 
     async def _switch_to_model_picker_app(self) -> None:
         if self._current_bottom_app == BottomApp.ModelPicker:
@@ -2079,8 +1978,6 @@ class VibeApp(App):  # noqa: PLR0904
                     self.query_one(ConnectorAuthApp).focus()
                 case BottomApp.Rewind:
                     self.query_one(RewindApp).focus()
-                case BottomApp.Voice:
-                    self.query_one(VoiceApp).focus()
                 case app:
                     assert_never(app)
         except Exception:
@@ -2090,14 +1987,6 @@ class VibeApp(App):  # noqa: PLR0904
         try:
             config_app = self.query_one(ConfigApp)
             config_app.action_close()
-        except Exception:
-            pass
-        self._last_escape_time = None
-
-    def _handle_voice_app_escape(self) -> None:
-        try:
-            voice_app = self.query_one(VoiceApp)
-            voice_app.action_close()
         except Exception:
             pass
         self._last_escape_time = None
@@ -2364,8 +2253,6 @@ class VibeApp(App):  # noqa: PLR0904
     def _try_interrupt_bottom_app_escape(self) -> bool:
         if self._current_bottom_app == BottomApp.Config:
             self._handle_config_app_escape()
-        elif self._current_bottom_app == BottomApp.Voice:
-            self._handle_voice_app_escape()
         elif self._current_bottom_app == BottomApp.MCP:
             self._handle_bottom_app_close_escape(MCPApp)
         elif self._current_bottom_app == BottomApp.ConnectorAuth:
@@ -2396,10 +2283,6 @@ class VibeApp(App):  # noqa: PLR0904
         return True
 
     def _try_interrupt(self) -> bool:
-        if self._voice_manager.transcribe_state != TranscribeState.IDLE:
-            self._voice_manager.cancel_recording()
-            return True
-
         if (
             self._chat_input_container
             and self._chat_input_container.dismiss_completion()
@@ -2410,13 +2293,6 @@ class VibeApp(App):  # noqa: PLR0904
             return True
 
         if self._try_interrupt_bottom_app_escape():
-            return True
-
-        if (
-            self._narrator_manager.is_playing
-            or self._narrator_manager.state != NarratorState.IDLE
-        ):
-            self._narrator_manager.cancel()
             return True
 
         interrupted = False
@@ -2594,7 +2470,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._remote_manager.cancel_stream_task()
 
         self._log_reader.shutdown()
-        self._narrator_manager.cancel()
         self.exit(result=self._get_session_resume_info())
 
     def action_scroll_chat_up(self) -> None:
@@ -2799,12 +2674,6 @@ class VibeApp(App):  # noqa: PLR0904
         # Textual doesn't repaint after resuming from Ctrl+Z (SIGTSTP);
         # force a full layout refresh so the UI isn't garbled.
         self.refresh(layout=True)
-
-    def _make_default_narrator_manager(self) -> NarratorManager:
-        return NarratorManager(
-            config_getter=lambda: self.config,
-            audio_player=AudioPlayer(),
-        )
 
 
 def run_textual_ui(

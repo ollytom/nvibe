@@ -14,11 +14,6 @@ from vibe.cli.textual_ui.widgets.chat_input.completion_manager import (
     MultiCompletionManager,
 )
 from vibe.cli.textual_ui.widgets.vscode_compat import patch_vscode_space
-from vibe.cli.voice_manager.voice_manager_port import (
-    RecordingStartError,
-    TranscribeState,
-    VoiceManagerPort,
-)
 
 InputMode = Literal["!", "/", ">", "&"]
 
@@ -58,12 +53,7 @@ class ChatTextArea(TextArea):
             self.mode = mode
             super().__init__()
 
-    def __init__(
-        self,
-        command_registry: CommandRegistry,
-        voice_manager: VoiceManagerPort | None = None,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, command_registry: CommandRegistry, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._command_registry = command_registry
         self._input_mode: InputMode = self.DEFAULT_MODE
@@ -74,7 +64,6 @@ class ChatTextArea(TextArea):
         self._cursor_moved_since_load: bool = False
         self._completion_manager: MultiCompletionManager | None = None
         self._app_has_focus: bool = True
-        self._voice_manager = voice_manager
 
     def on_blur(self, event: events.Blur) -> None:
         if self._app_has_focus:
@@ -172,36 +161,7 @@ class ChatTextArea(TextArea):
 
     feedback_active: bool = False
 
-    async def _handle_voice_key(self, event: events.Key) -> bool:
-        if not self._voice_manager:
-            return False
-
-        # Handle key pressed during audio recording
-        if self._voice_manager.transcribe_state != TranscribeState.IDLE:
-            event.prevent_default()
-            event.stop()
-            if event.key == "ctrl+c":  # Escape is handled in app.py
-                self._voice_manager.cancel_recording()
-            elif self._voice_manager.transcribe_state == TranscribeState.RECORDING:
-                await self._voice_manager.stop_recording()
-            return True
-
-        # Handle audio record keybind
-        if self._voice_manager.is_enabled and event.key == "ctrl+r":
-            event.prevent_default()
-            event.stop()
-            try:
-                self._voice_manager.start_recording()
-            except RecordingStartError as e:
-                self.notify(str(e), severity="warning")
-            return True
-
-        return False
-
     async def _on_key(self, event: events.Key) -> None:  # noqa: PLR0911
-        if await self._handle_voice_key(event):
-            return
-
         self._mark_cursor_moved_if_needed()
 
         if self.feedback_active:

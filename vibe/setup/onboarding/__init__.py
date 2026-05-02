@@ -20,9 +20,7 @@ class OnboardingApp(App[str | None]):
         self.theme = "textual-ansi"
 
         self.install_screen(WelcomeScreen(), "welcome")
-        self.install_screen(
-            ApiKeyScreen(), "api_key"
-        )
+        self.install_screen(ApiKeyScreen(), "api_key")
         self.push_screen("welcome")
 
 

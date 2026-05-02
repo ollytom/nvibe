@@ -77,7 +77,6 @@ def test_run_programmatic_preload_streaming_is_batched(
             Role.assistant,
         ]
 
-
         assert (
             spy.emitted[0][1] == "You are Vibe, a super useful programming assistant."
         )

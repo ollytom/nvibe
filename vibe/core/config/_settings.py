@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import MutableMapping
-from enum import StrEnum, auto
 import os
 from pathlib import Path
 import re
@@ -11,7 +10,6 @@ from typing import Annotated, Any, Literal, get_args
 from urllib.parse import urljoin
 
 from dotenv import dotenv_values
-from mistralai.client.models import SpeechOutputFormat
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     DEFAULT_TRACES_EXPORT_PATH,
 )
@@ -208,17 +206,6 @@ class ProviderConfig(BaseModel):
         )
 
 
-class TranscribeClient(StrEnum):
-    MISTRAL = auto()
-
-
-class TranscribeProviderConfig(BaseModel):
-    name: str
-    api_base: str = "wss://api.mistral.ai"
-    api_key_env_var: str = ""
-    client: TranscribeClient = TranscribeClient.MISTRAL
-
-
 class _MCPBase(BaseModel):
     name: str = Field(description="Short alias used to prefix tool names")
     prompt: str | None = Field(
@@ -372,39 +359,6 @@ class ModelConfig(BaseModel):
     _default_alias_to_name = model_validator(mode="before")(_default_alias_to_name)
 
 
-class TranscribeModelConfig(BaseModel):
-    name: str
-    provider: str
-    alias: str
-    sample_rate: int = 16000
-    encoding: Literal["pcm_s16le"] = "pcm_s16le"
-    language: str = "en"
-    target_streaming_delay_ms: int = 500
-
-    _default_alias_to_name = model_validator(mode="before")(_default_alias_to_name)
-
-
-class TTSClient(StrEnum):
-    MISTRAL = auto()
-
-
-class TTSProviderConfig(BaseModel):
-    name: str
-    api_base: str = "https://api.mistral.ai"
-    api_key_env_var: str = ""
-    client: TTSClient = TTSClient.MISTRAL
-
-
-class TTSModelConfig(BaseModel):
-    name: str
-    provider: str
-    alias: str
-    voice: str = "gb_jane_neutral"
-    response_format: SpeechOutputFormat = "wav"
-
-    _default_alias_to_name = model_validator(mode="before")(_default_alias_to_name)
-
-
 class OtelSpanExporterConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -459,36 +413,6 @@ DEFAULT_MODELS = [
 
 DEFAULT_ACTIVE_MODEL = DEFAULT_MODELS[0].alias
 
-DEFAULT_TRANSCRIBE_PROVIDERS = [
-    TranscribeProviderConfig(
-        name="mistral",
-        api_base="wss://api.mistral.ai",
-        api_key_env_var=DEFAULT_MISTRAL_API_ENV_KEY,
-    )
-]
-
-DEFAULT_TRANSCRIBE_MODELS = [
-    TranscribeModelConfig(
-        name="voxtral-mini-transcribe-realtime-2602",
-        provider="mistral",
-        alias="voxtral-realtime",
-    )
-]
-
-DEFAULT_TTS_PROVIDERS = [
-    TTSProviderConfig(
-        name="mistral",
-        api_base="https://api.mistral.ai",
-        api_key_env_var=DEFAULT_MISTRAL_API_ENV_KEY,
-    )
-]
-
-DEFAULT_TTS_MODELS = [
-    TTSModelConfig(
-        name="voxtral-mini-tts-latest", provider="mistral", alias="voxtral-tts"
-    )
-]
-
 
 class VibeConfig(BaseSettings):
     active_model: str = DEFAULT_ACTIVE_MODEL
@@ -498,10 +422,6 @@ class VibeConfig(BaseSettings):
     file_watcher_for_autocomplete: bool = False
     displayed_workdir: str = ""
     context_warnings: bool = False
-    voice_mode_enabled: bool = False
-    narrator_enabled: bool = False
-    active_transcribe_model: str = "voxtral-realtime"
-    active_tts_model: str = "voxtral-tts"
     bypass_tool_permissions: bool = False
     system_prompt_id: str = "cli"
     include_commit_signature: bool = True
@@ -532,20 +452,6 @@ class VibeConfig(BaseSettings):
     )
     models: list[ModelConfig] = Field(default_factory=lambda: list(DEFAULT_MODELS))
     compaction_model: ModelConfig | None = None
-
-    transcribe_providers: list[TranscribeProviderConfig] = Field(
-        default_factory=lambda: list(DEFAULT_TRANSCRIBE_PROVIDERS)
-    )
-    transcribe_models: list[TranscribeModelConfig] = Field(
-        default_factory=lambda: list(DEFAULT_TRANSCRIBE_MODELS)
-    )
-
-    tts_providers: list[TTSProviderConfig] = Field(
-        default_factory=lambda: list(DEFAULT_TTS_PROVIDERS)
-    )
-    tts_models: list[TTSModelConfig] = Field(
-        default_factory=lambda: list(DEFAULT_TTS_MODELS)
-    )
 
     project_context: ProjectContextConfig = Field(default_factory=ProjectContextConfig)
     session_logging: SessionLoggingConfig = Field(default_factory=SessionLoggingConfig)
@@ -743,40 +649,6 @@ class VibeConfig(BaseSettings):
         except ValueError:
             return False
 
-    def get_active_transcribe_model(self) -> TranscribeModelConfig:
-        for model in self.transcribe_models:
-            if model.alias == self.active_transcribe_model:
-                return model
-        raise ValueError(
-            f"Active transcribe model '{self.active_transcribe_model}' not found in configuration."
-        )
-
-    def get_transcribe_provider_for_model(
-        self, model: TranscribeModelConfig
-    ) -> TranscribeProviderConfig:
-        for provider in self.transcribe_providers:
-            if provider.name == model.provider:
-                return provider
-        raise ValueError(
-            f"Transcribe provider '{model.provider}' for transcribe model '{model.name}' not found in configuration."
-        )
-
-    def get_active_tts_model(self) -> TTSModelConfig:
-        for model in self.tts_models:
-            if model.alias == self.active_tts_model:
-                return model
-        raise ValueError(
-            f"Active TTS model '{self.active_tts_model}' not found in configuration."
-        )
-
-    def get_tts_provider_for_model(self, model: TTSModelConfig) -> TTSProviderConfig:
-        for provider in self.tts_providers:
-            if provider.name == model.provider:
-                return provider
-        raise ValueError(
-            f"TTS provider '{model.provider}' for TTS model '{model.name}' not found in configuration."
-        )
-
     @classmethod
     def settings_customise_sources(
         cls,
@@ -877,28 +749,6 @@ class VibeConfig(BaseSettings):
             if model.alias in seen_aliases:
                 raise ValueError(
                     f"Duplicate model alias found: '{model.alias}'. Aliases must be unique."
-                )
-            seen_aliases.add(model.alias)
-        return self
-
-    @model_validator(mode="after")
-    def _validate_transcribe_model_uniqueness(self) -> VibeConfig:
-        seen_aliases: set[str] = set()
-        for model in self.transcribe_models:
-            if model.alias in seen_aliases:
-                raise ValueError(
-                    f"Duplicate transcribe model alias found: '{model.alias}'. Aliases must be unique."
-                )
-            seen_aliases.add(model.alias)
-        return self
-
-    @model_validator(mode="after")
-    def _validate_tts_model_uniqueness(self) -> VibeConfig:
-        seen_aliases: set[str] = set()
-        for model in self.tts_models:
-            if model.alias in seen_aliases:
-                raise ValueError(
-                    f"Duplicate TTS model alias found: '{model.alias}'. Aliases must be unique."
                 )
             seen_aliases.add(model.alias)
         return self

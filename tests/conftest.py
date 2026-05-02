@@ -10,7 +10,6 @@ import tomli_w
 
 from tests.cli.plan_offer.adapters.fake_whoami_gateway import FakeWhoAmIGateway
 from tests.stubs.fake_backend import FakeBackend
-from tests.stubs.fake_voice_manager import FakeVoiceManager
 from tests.update_notifier.adapters.fake_update_cache_repository import (
     FakeUpdateCacheRepository,
 )
@@ -258,7 +257,6 @@ def build_test_vibe_app(
     resolved_current_version = (
         CORE_VERSION if current_version is None else current_version
     )
-    voice_manager = kwargs.pop("voice_manager", FakeVoiceManager())
 
     return VibeApp(
         agent_loop=resolved_agent_loop,
@@ -267,6 +265,5 @@ def build_test_vibe_app(
         update_notifier=resolved_update_notifier,
         update_cache_repository=resolved_update_cache_repository,
         plan_offer_gateway=resolved_plan_offer_gateway,
-        voice_manager=voice_manager,
         **kwargs,
     )

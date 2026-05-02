@@ -74,9 +74,7 @@ def make_agent_loop(
 
 
 @pytest.mark.asyncio
-async def test_single_tool_call_executes_under_auto_approve(
-
-) -> None:
+async def test_single_tool_call_executes_under_auto_approve() -> None:
     mocked_tool_call_id = "call_1"
     tool_call = make_todo_tool_call(mocked_tool_call_id)
     backend = FakeBackend([
@@ -113,9 +111,7 @@ async def test_single_tool_call_executes_under_auto_approve(
 
 
 @pytest.mark.asyncio
-async def test_tool_call_requires_approval_if_not_auto_approved(
-
-) -> None:
+async def test_tool_call_requires_approval_if_not_auto_approved() -> None:
     agent_loop = make_agent_loop(
         auto_approve=False,
         todo_permission=ToolPermission.ASK,
@@ -184,9 +180,9 @@ async def test_tool_call_approved_by_callback() -> None:
 
 
 @pytest.mark.asyncio
-async def test_tool_call_rejected_when_auto_approve_disabled_and_rejected_by_callback(
-
-) -> None:
+async def test_tool_call_rejected_when_auto_approve_disabled_and_rejected_by_callback() -> (
+    None
+):
     custom_feedback = "User declined tool execution"
 
     async def approval_callback(
@@ -224,9 +220,7 @@ async def test_tool_call_rejected_when_auto_approve_disabled_and_rejected_by_cal
 
 
 @pytest.mark.asyncio
-async def test_tool_call_skipped_when_permission_is_never(
-
-) -> None:
+async def test_tool_call_skipped_when_permission_is_never() -> None:
     agent_loop = make_agent_loop(
         auto_approve=False,
         todo_permission=ToolPermission.NEVER,
@@ -485,9 +479,7 @@ async def test_fill_missing_tool_responses_inserts_placeholders() -> None:
 
 
 @pytest.mark.asyncio
-async def test_parallel_tool_calls_produce_correct_events(
-
-) -> None:
+async def test_parallel_tool_calls_produce_correct_events() -> None:
     """Two tool calls in one LLM response should execute in parallel and produce correct events."""
     tool_call_1 = make_todo_tool_call("call_p1", index=0)
     tool_call_2 = make_todo_tool_call("call_p2", index=1)
@@ -530,13 +522,9 @@ async def test_parallel_tool_calls_produce_correct_events(
     assert {m.tool_call_id for m in tool_msgs} == {"call_p1", "call_p2"}
     assert agent_loop.stats.tool_calls_succeeded == 2
 
-    
-
 
 @pytest.mark.asyncio
-async def test_parallel_tool_calls_with_approval_callback(
-
-) -> None:
+async def test_parallel_tool_calls_with_approval_callback() -> None:
     """Two parallel tool calls requiring approval should both succeed when approved."""
     approval_calls: list[str] = []
 
@@ -613,9 +601,7 @@ async def test_parallel_approvals_can_run_concurrently() -> None:
 
 
 @pytest.mark.asyncio
-async def test_parallel_mixed_approval_and_rejection(
-
-) -> None:
+async def test_parallel_mixed_approval_and_rejection() -> None:
     """One tool approved, one rejected — both should produce correct events."""
 
     async def approval_callback(
@@ -652,8 +638,6 @@ async def test_parallel_mixed_approval_and_rejection(
     assert agent_loop.stats.tool_calls_rejected == 1
     assert agent_loop.stats.tool_calls_succeeded == 1
 
-    
-
 
 @pytest.mark.asyncio
 async def test_parallel_three_tools_all_succeed() -> None:
@@ -689,8 +673,6 @@ async def test_parallel_three_tools_all_succeed() -> None:
     assert agent_loop.stats.tool_calls_succeeded == 3
     tool_msgs = [m for m in agent_loop.messages if m.role == Role.tool]
     assert len(tool_msgs) == 3
-
-    
 
 
 @pytest.mark.asyncio

@@ -103,7 +103,7 @@ async def test_arrow_navigation_cycles_through_suggestions(vibe_app: VibeApp) ->
 
 @pytest.mark.asyncio
 async def test_pressing_enter_submits_selected_command_and_hides_popup(
-    vibe_app: VibeApp
+    vibe_app: VibeApp,
 ) -> None:
     async with vibe_app.run_test() as pilot:
         chat_input = vibe_app.query_one(ChatInputContainer)

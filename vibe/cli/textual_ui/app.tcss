@@ -126,11 +126,6 @@ TextArea > .text-area--cursor {
         border-title-color: ansi_red;
     }
 
-    &.border-recording {
-        border: solid $mistral_orange;
-        border-title-color: $mistral_orange;
-    }
-
     &.border-remote {
         border: solid $mistral_orange;
         border-title-color: $mistral_orange;
@@ -142,8 +137,7 @@ TextArea > .text-area--cursor {
 }
 
 #prompt,
-#prompt-spinner,
-#recording-indicator {
+#prompt-spinner {
     width: auto;
     background: transparent;
     color: $mistral_orange;
@@ -162,9 +156,6 @@ TextArea > .text-area--cursor {
     padding: 0;
     scrollbar-visibility: hidden;
 
-    &.recording {
-        color: ansi_bright_black;
-    }
 }
 
 ToastRack {
@@ -691,7 +682,7 @@ StatusMessage {
 
 }
 
-#config-app, #voice-app, #mcp-app, #connectorauth-app {
+#config-app, #mcp-app, #connectorauth-app {
     width: 100%;
     height: auto;
     background: transparent;
@@ -700,7 +691,7 @@ StatusMessage {
     margin: 0;
 }
 
-#config-content, #voice-content, #mcp-content, #connectorauth-content {
+#config-content, #mcp-content, #connectorauth-content {
     width: 100%;
     height: auto;
 }
@@ -964,14 +955,6 @@ ContextProgress {
     padding: 0;
     margin: 0;
     color: ansi_bright_black;
-}
-
-NarratorStatus {
-    width: auto;
-    height: auto;
-    background: transparent;
-    padding: 0;
-    margin: 0 0 0 1;
 }
 
 #banner-container {

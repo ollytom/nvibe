@@ -97,8 +97,6 @@ class TestShouldShow:
         ):
             assert manager.should_show(_make_agent_loop()) is True
 
-
-
     def test_does_not_show_when_too_few_user_messages(self, tmp_path: Path) -> None:
         manager = FeedbackBarManager()
         with (

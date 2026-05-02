@@ -156,7 +156,6 @@ class ForkSessionParams(BaseModel):
     message_id: str | None = Field(default=None, alias="messageId")
 
 
-
 def _resolved_user_message_id(client_message_id: str | None) -> str:
     if client_message_id is not None:
         return client_message_id
@@ -252,7 +251,6 @@ class VibeAcpAgentLoop(AcpAgent):
     ) -> AuthenticateResponse | None:
         raise NotImplementedMethodError("authenticate")
 
-
     def _load_config(self) -> VibeConfig:
         try:
             config = VibeConfig.load(disabled_tools=["ask_user_question"])
@@ -291,7 +289,6 @@ class VibeAcpAgentLoop(AcpAgent):
             config=config,
             agent_name=agent_name,
             enable_streaming=True,
-
             defer_heavy_init=True,
             hook_config_result=hook_config_result,
         )
@@ -334,7 +331,6 @@ class VibeAcpAgentLoop(AcpAgent):
             session = await self._create_acp_session(agent_loop.session_id, agent_loop)
         except Exception as e:
             raise ConfigurationError(str(e)) from e
-
 
         modes_state, _, models_state, _ = self._build_session_state(session)
 

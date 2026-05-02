@@ -118,5 +118,3 @@ def test_persist_api_key_returns_env_var_error_for_empty_env_var_name() -> None:
     result = persist_api_key(provider, "secret")
 
     assert result == "env_var_error:<empty>"
-
-

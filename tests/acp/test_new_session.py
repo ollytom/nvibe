@@ -47,7 +47,6 @@ class TestACPNewSession:
             cwd=str(Path.cwd()), mcp_servers=[]
         )
 
-
         assert session_response.session_id is not None
         acp_session = next(
             (

@@ -278,7 +278,6 @@ class MistralBackend:
                 if tool_choice
                 else None,
                 http_headers=extra_headers,
-
                 stream=False,
                 reasoning_effort=reasoning_effort,
             )
@@ -356,7 +355,6 @@ class MistralBackend:
                 if tool_choice
                 else None,
                 http_headers=extra_headers,
-
                 reasoning_effort=reasoning_effort,
             )
             correlation_id = stream.response.headers.get("mistral-correlation-id")

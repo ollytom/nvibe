@@ -31,10 +31,7 @@ def _save_api_key_to_env_file(env_key: str, api_key: str) -> None:
     set_key(GLOBAL_ENV_FILE.path, env_key, api_key)
 
 
-def persist_api_key(
-    provider: ProviderConfig,
-    api_key: str,
-) -> str:
+def persist_api_key(provider: ProviderConfig, api_key: str) -> str:
     env_key = provider.api_key_env_var
     if not env_key:
         return "env_var_error:<empty>"
@@ -72,10 +69,7 @@ class ApiKeyScreen(OnboardingScreen):
 
     NEXT_SCREEN = None
 
-    def __init__(
-        self,
-        provider: ProviderConfig | None = None,
-    ) -> None:
+    def __init__(self, provider: ProviderConfig | None = None) -> None:
         super().__init__()
         self.provider = _resolve_onboarding_provider(provider)
 
@@ -157,9 +151,7 @@ class ApiKeyScreen(OnboardingScreen):
             self._save_and_finish(event.value)
 
     def _save_and_finish(self, api_key: str) -> None:
-        self.app.exit(
-            persist_api_key(self.provider, api_key)
-        )
+        self.app.exit(persist_api_key(self.provider, api_key))
 
     def on_mouse_up(self, event: MouseUp) -> None:
         copy_selection_to_clipboard(self.app)

@@ -59,7 +59,6 @@ class TestCloseSession:
         bg_task = session.spawn(background_work())
         assert bg_task is not None
 
-
         await acp_agent_loop.close_session(session_response.session_id)
 
         assert bg_task.cancelled()

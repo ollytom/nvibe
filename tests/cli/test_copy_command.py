@@ -16,12 +16,10 @@ async def test_copy_command_copies_last_assistant_message() -> None:
     async with app.run_test() as pilot:
         await app._mount_and_scroll(AssistantMessage("first reply"))
         await app._mount_and_scroll(AssistantMessage(second_reply))
-        with (
-            patch(
-                "vibe.cli.textual_ui.app.copy_text_to_clipboard",
-                return_value=stripped_second_reply,
-            ) as mock_copy,
-        ):
+        with patch(
+            "vibe.cli.textual_ui.app.copy_text_to_clipboard",
+            return_value=stripped_second_reply,
+        ) as mock_copy:
             handled = await app._handle_command("/copy")
         await pilot.pause()
     assert handled is True

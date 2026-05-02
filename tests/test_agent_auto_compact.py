@@ -50,7 +50,6 @@ async def test_auto_compact_emits_correct_events() -> None:
     assert final.content == "<final>"
 
 
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("side_effect", "expected_exception", "match", "expected_status"),
@@ -92,7 +91,6 @@ async def test_auto_compact_emits_terminal(
     assert len(events) == 2
     assert isinstance(events[0], UserMessageEvent)
     assert isinstance(events[1], CompactStartEvent)
-
 
 
 @pytest.mark.asyncio

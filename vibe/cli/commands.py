@@ -136,11 +136,6 @@ class CommandRegistry:
                 ),
                 handler="_show_mcp",
             ),
-            "voice": Command(
-                aliases=frozenset(["/voice"]),
-                description="Configure voice settings",
-                handler="_show_voice_settings",
-            ),
             "leanstall": Command(
                 aliases=frozenset(["/leanstall"]),
                 description="Install the Lean 4 agent (leanstral)",

@@ -81,12 +81,6 @@ include_commit_signature = true   # Add "Co-Authored-By" to commits
 include_model_info = true         # Include model name in system prompt
 include_project_context = true    # Include project context (git info, cwd) in system prompt
 include_prompt_detail = true      # Include OS info, tool prompts, skills, and agents in system prompt
-
-# Voice features
-voice_mode_enabled = false
-narrator_enabled = false
-active_transcribe_model = "voxtral-realtime"
-active_tts_model = "voxtral-tts"
 ```
 
 ### Providers
@@ -369,7 +363,6 @@ Custom agents are TOML files in `~/.vibe/agents/NAME.toml`.
 - `/debug` - Toggle debug console
 - `/compact` - Compact conversation history by summarizing
 - `/status` - Display agent statistics
-- `/voice` - Configure voice settings
 - `/mcp` - Display available MCP servers (pass a server name to list its tools)
 - `/resume` (or `/continue`) - Browse and resume past sessions
 - `/rewind` - Rewind to a previous message

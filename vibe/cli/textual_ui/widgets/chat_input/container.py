@@ -23,7 +23,6 @@ from vibe.cli.textual_ui.widgets.chat_input.completion_popup import (
     CompletionPopup,
 )
 from vibe.cli.textual_ui.widgets.chat_input.text_area import ChatTextArea
-from vibe.cli.voice_manager.voice_manager_port import VoiceManagerPort
 from vibe.core.agents import AgentSafety
 from vibe.core.autocompletion.completers import CommandCompleter, PathCompleter
 
@@ -57,7 +56,6 @@ class ChatInputContainer(Vertical):
         agent_name: str = "",
         skill_entries_getter: Callable[[], list[tuple[str, str]]] | None = None,
         file_watcher_for_autocomplete_getter: Callable[[], bool] | None = None,
-        voice_manager: VoiceManagerPort | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -69,7 +67,6 @@ class ChatInputContainer(Vertical):
         self._file_watcher_for_autocomplete_getter = (
             file_watcher_for_autocomplete_getter
         )
-        self._voice_manager = voice_manager
         self._custom_border_label: str | None = None
         self._custom_border_class: str | None = None
 
@@ -104,7 +101,6 @@ class ChatInputContainer(Vertical):
                 history_file=self._history_file,
                 command_registry=self._command_registry,
                 id="input-body",
-                voice_manager=self._voice_manager,
             )
 
             yield self._body
