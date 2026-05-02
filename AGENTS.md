@@ -85,9 +85,7 @@ Always go through `uv` — never invoke bare `python` or `pip`.
 
 ## Git
 
-- Never use `git commit --amend`, `git push --force`, or `git push --force-with-lease`.
-- Always create new commits and push with a plain `git push`.
-- If a push is rejected due to upstream changes, rebase onto the updated remote branch — never merge and never force-push.
+- NEVER git push
 
 ## Editor tip
 
