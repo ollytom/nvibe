@@ -15,7 +15,6 @@ import time
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
-from opentelemetry import trace
 from pydantic import BaseModel
 
 from vibe.core.agents.manager import AgentManager
@@ -74,7 +73,6 @@ from vibe.core.tools.permissions import (
     RequiredPermission,
 )
 from vibe.core.tools.utils import wildcard_match
-from vibe.core.tracing import agent_span, set_tool_result, tool_span
 from vibe.core.types import (
     AgentProfileChangedEvent,
     AgentStats,
@@ -489,15 +487,10 @@ class AgentLoop:
     ) -> AsyncGenerator[BaseEvent, None]:
         self._clean_message_history()
         self.rewind_manager.create_checkpoint()
-        try:
-            model_name = self.config.get_active_model().name
-        except ValueError:
-            model_name = None
-        async with agent_span(model=model_name, session_id=self.session_id):
-            async for event in self._conversation_loop(
-                msg, client_message_id=client_message_id
-            ):
-                yield event
+        async for event in self._conversation_loop(
+            msg, client_message_id=client_message_id
+        ):
+            yield event
 
     @property
     def teleport_service(self) -> TeleportService:
@@ -819,22 +812,17 @@ class AgentLoop:
     async def _process_one_tool_call(
         self, tool_call: ResolvedToolCall
     ) -> AsyncGenerator[ToolResultEvent | ToolStreamEvent]:
-        async with tool_span(
-            tool_name=tool_call.tool_name,
-            call_id=tool_call.call_id,
-            arguments=tool_call.validated_args.model_dump_json(),
-        ) as span:
-            async for event in self._execute_tool_call(span, tool_call):
-                yield event
+        async for event in self._execute_tool_call(tool_call):
+            yield event
 
     async def _execute_tool_call(
-        self, span: trace.Span, tool_call: ResolvedToolCall
+        self, tool_call: ResolvedToolCall
     ) -> AsyncGenerator[ToolResultEvent | ToolStreamEvent]:
         try:
             tool_instance = self.tool_manager.get(tool_call.tool_name)
         except Exception as exc:
             error_msg = f"Error getting tool '{tool_call.tool_name}': {exc}"
-            yield self._tool_failure_event(tool_call, error_msg, span=span)
+            yield self._tool_failure_event(tool_call, error_msg)
             return
 
         decision: ToolDecision | None = None
@@ -859,7 +847,7 @@ class AgentLoop:
                     tool_call_id=tool_call.call_id,
                 )
                 self._handle_tool_response(
-                    tool_call, skip_reason, "skipped", decision, span=span
+                    tool_call, skip_reason, "skipped", decision
                 )
                 return
 
@@ -902,7 +890,7 @@ class AgentLoop:
             if extra:
                 text += "\n\n" + extra
             self._handle_tool_response(
-                tool_call, text, "success", decision, result_dict, span=span
+                tool_call, text, "success", decision, result_dict
             )
             yield ToolResultEvent(
                 tool_name=tool_call.tool_name,
@@ -920,7 +908,7 @@ class AgentLoop:
             )
             self.stats.tool_calls_failed += 1
             yield self._tool_failure_event(
-                tool_call, cancel, decision, cancelled=True, span=span
+                tool_call, cancel, decision, cancelled=True
             )
             raise
 
@@ -931,7 +919,7 @@ class AgentLoop:
                 self.stats.tool_calls_rejected += 1
             else:
                 self.stats.tool_calls_failed += 1
-            yield self._tool_failure_event(tool_call, error_msg, decision, span=span)
+            yield self._tool_failure_event(tool_call, error_msg, decision)
 
     async def _handle_tool_calls(
         self, resolved: ResolvedMessage
@@ -1012,7 +1000,6 @@ class AgentLoop:
         status: Literal["success", "failure", "skipped"],
         decision: ToolDecision | None = None,
         result: dict[str, Any] | None = None,
-        span: trace.Span | None = None,
     ) -> None:
         self.messages.append(
             LLMMessage.model_validate(
@@ -1020,19 +1007,15 @@ class AgentLoop:
             )
         )
 
-        if span is not None:
-            set_tool_result(span, text)
-
     def _tool_failure_event(
         self,
         tool_call: ResolvedToolCall,
         error_msg: str,
         decision: ToolDecision | None = None,
         cancelled: bool = False,
-        span: trace.Span | None = None,
     ) -> ToolResultEvent:
         """Create a ToolResultEvent for a failed tool and record the failure."""
-        self._handle_tool_response(tool_call, error_msg, "failure", decision, span=span)
+        self._handle_tool_response(tool_call, error_msg, "failure", decision)
         return ToolResultEvent(
             tool_name=tool_call.tool_name,
             tool_class=tool_call.tool_class,

@@ -7,13 +7,9 @@ import re
 import shlex
 import tomllib
 from typing import Annotated, Any, Literal, get_args
-from urllib.parse import urljoin
 
 from dotenv import dotenv_values
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-    DEFAULT_TRACES_EXPORT_PATH,
-)
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import to_jsonable_python
 from pydantic_settings import (
@@ -24,11 +20,9 @@ from pydantic_settings import (
 import tomli_w
 
 from vibe.core.config.harness_files import get_harness_files_manager
-from vibe.core.logger import logger
 from vibe.core.paths import GLOBAL_ENV_FILE, SESSION_LOG_DIR
 from vibe.core.prompts import SystemPrompt
 from vibe.core.types import Backend
-from vibe.core.utils import get_server_url_from_api_base
 from vibe.core.utils.io import read_safe
 
 
@@ -359,14 +353,6 @@ class ModelConfig(BaseModel):
     _default_alias_to_name = model_validator(mode="before")(_default_alias_to_name)
 
 
-class OtelSpanExporterConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
-    endpoint: str
-    headers: dict[str, str] | None = None
-
-
-MISTRAL_OTEL_PATH = "/telemetry"
 _DEFAULT_MISTRAL_SERVER_URL = "https://api.mistral.ai"
 
 DEFAULT_PROVIDERS = [
@@ -440,10 +426,6 @@ class VibeConfig(BaseSettings):
     vibe_code_task_queue: str | None = Field(default="shared-vibe-nuage", exclude=True)
     vibe_code_api_key_env_var: str = Field(default="MISTRAL_API_KEY", exclude=True)
     vibe_code_project_name: str | None = Field(default=None, exclude=True)
-
-    # TODO(otel): remove exclude=True once the feature is publicly available
-    enable_otel: bool = Field(default=False, exclude=True)
-    otel_endpoint: str = Field(default="", exclude=True)
 
     enable_experimental_hooks: bool = Field(default=False, exclude=True)
 
@@ -551,44 +533,6 @@ class VibeConfig(BaseSettings):
     @property
     def vibe_code_api_key(self) -> str:
         return os.getenv(self.vibe_code_api_key_env_var, "")
-
-    @property
-    def otel_span_exporter_config(self) -> OtelSpanExporterConfig | None:
-        # When otel_endpoint is set explicitly, authentication is the user's responsibility
-        # (via OTEL_EXPORTER_OTLP_* env vars), so headers are left empty.
-        # Otherwise endpoint and API key are derived from the active provider if it's Mistral,
-        # or the first Mistral provider.
-        traces_export_path = DEFAULT_TRACES_EXPORT_PATH.lstrip("/")
-        if self.otel_endpoint:
-            return OtelSpanExporterConfig(
-                endpoint=urljoin(
-                    f"{self.otel_endpoint.rstrip('/')}/", traces_export_path
-                )
-            )
-
-        provider = self.get_mistral_provider()
-
-        if provider is not None:
-            server_url = get_server_url_from_api_base(provider.api_base)
-            api_key_env = provider.api_key_env_var or DEFAULT_MISTRAL_API_ENV_KEY
-        else:
-            server_url = None
-            api_key_env = DEFAULT_MISTRAL_API_ENV_KEY
-
-        endpoint = urljoin(
-            f"{urljoin(server_url or _DEFAULT_MISTRAL_SERVER_URL, MISTRAL_OTEL_PATH).rstrip('/')}/",
-            traces_export_path,
-        )
-
-        if not (api_key := os.getenv(api_key_env)):
-            logger.warning(
-                "OTEL tracing enabled but %s is not set; skipping.", api_key_env
-            )
-            return None
-
-        return OtelSpanExporterConfig(
-            endpoint=endpoint, headers={"Authorization": f"Bearer {api_key}"}
-        )
 
     @property
     def system_prompt(self) -> str:

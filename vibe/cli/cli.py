@@ -23,7 +23,6 @@ from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
 from vibe.core.programmatic import run_programmatic
 from vibe.core.session.session_loader import SessionLoader
-from vibe.core.tracing import setup_tracing
 from vibe.core.trusted_folders import find_trustable_files, trusted_folders_manager
 from vibe.core.types import LLMMessage, OutputFormat, Role
 from vibe.core.utils import ConversationLimitException
@@ -188,7 +187,6 @@ def run_cli(args: argparse.Namespace) -> None:
         is_interactive = args.prompt is None
         config = load_config_or_exit(interactive=is_interactive)
         hook_config_result = load_hooks_from_fs(config)
-        setup_tracing(config)
 
         if args.enabled_tools:
             config.enabled_tools = args.enabled_tools

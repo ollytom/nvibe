@@ -78,8 +78,7 @@ def main() -> None:
     init_harness_files_manager("user", "project")
 
     from vibe.acp.acp_agent_loop import run_acp_server
-    from vibe.core.config import VibeConfig, load_dotenv_values
-    from vibe.core.tracing import setup_tracing
+    from vibe.core.config import load_dotenv_values
     from vibe.setup.onboarding import run_onboarding
 
     load_dotenv_values()
@@ -88,12 +87,6 @@ def main() -> None:
     if args.setup:
         run_onboarding()
         sys.exit(0)
-
-    try:
-        config = VibeConfig.load()
-        setup_tracing(config)
-    except Exception:
-        pass  # tracing disabled
 
     run_acp_server()
 
