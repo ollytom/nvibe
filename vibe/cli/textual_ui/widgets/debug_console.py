@@ -139,15 +139,6 @@ class _LogView(ScrollView, can_focus=True):
         if event.size.width != self._cached_width:
             self._reflow()
 
-    def on_click(self, event: events.Click) -> None:
-        _, scroll_y = self.scroll_offset
-        visual_y = scroll_y + event.y
-        logical_idx = bisect.bisect_right(self._wrap_prefix, visual_y) - 1
-        if 0 <= logical_idx < len(self._lines):
-            plain = Text.from_markup(self._lines[logical_idx]).plain
-            self.app.copy_to_clipboard(plain)
-            self.app.notify("Copied to clipboard", timeout=2.0)
-
     def _try_load_previous(self) -> None:
         if not self._has_more() or self.scroll_y > 0:
             return

@@ -404,7 +404,6 @@ class VibeConfig(BaseSettings):
     active_model: str = DEFAULT_ACTIVE_MODEL
     vim_keybindings: bool = False
     disable_welcome_banner_animation: bool = False
-    autocopy_to_clipboard: bool = True
     file_watcher_for_autocomplete: bool = False
     displayed_workdir: str = ""
     context_warnings: bool = False

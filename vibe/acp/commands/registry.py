@@ -71,6 +71,4 @@ def _build_commands() -> dict[str, AcpCommand]:
             handler="_handle_proxy_setup",
             input_hint="KEY value to set, KEY to unset, or empty for help",
         ),
-
-
     }

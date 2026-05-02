@@ -27,7 +27,6 @@ class TestCommandRegistry:
         assert registry.get_command_name("/clear") == "clear"
         assert registry.get_command_name("/exit") == "exit"
 
-
     def test_get_command_name_normalizes_input(self) -> None:
         registry = CommandRegistry()
         assert registry.get_command_name("  /help  ") == "help"
@@ -116,6 +115,3 @@ class TestCommandRegistry:
         registry = CommandRegistry()
         result = registry.parse_command("/connectors filesystem")
         assert result == ("mcp", registry.commands["mcp"], "filesystem")
-
-
-

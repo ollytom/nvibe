@@ -7,11 +7,9 @@ from dotenv import set_key
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Center, Horizontal, Vertical
-from textual.events import MouseUp
 from textual.validation import Length
 from textual.widgets import Input, Link, Static
 
-from vibe.cli.clipboard import copy_selection_to_clipboard
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.core.config import DEFAULT_PROVIDERS, ProviderConfig
 from vibe.core.paths import GLOBAL_ENV_FILE
@@ -152,6 +150,3 @@ class ApiKeyScreen(OnboardingScreen):
 
     def _save_and_finish(self, api_key: str) -> None:
         self.app.exit(persist_api_key(self.provider, api_key))
-
-    def on_mouse_up(self, event: MouseUp) -> None:
-        copy_selection_to_clipboard(self.app)

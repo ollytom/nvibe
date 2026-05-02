@@ -81,11 +81,6 @@ class CommandRegistry:
                 description="Clear conversation history",
                 handler="_clear_history",
             ),
-            "copy": Command(
-                aliases=frozenset(["/copy"]),
-                description="Copy the last agent message to the clipboard",
-                handler="_copy_last_agent_message",
-            ),
             "log": Command(
                 aliases=frozenset(["/log"]),
                 description="Show path to current interaction log file",
@@ -136,13 +131,11 @@ class CommandRegistry:
                 ),
                 handler="_show_mcp",
             ),
-
             "rewind": Command(
                 aliases=frozenset(["/rewind"]),
                 description="Rewind to a previous message",
                 handler="_start_rewind_mode",
             ),
-
         }
 
     @property

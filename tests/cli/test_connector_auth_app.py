@@ -80,7 +80,6 @@ class TestAuthUrlFetched:
             if hasattr(call.args[0], "id") and call.args[0].id
         ]
         assert _AuthOptionId.OPEN in option_ids
-        assert _AuthOptionId.COPY in option_ids
         assert _AuthOptionId.SHOW in option_ids
 
     def test_auth_url_none_shows_no_auth_message(self) -> None:
@@ -126,35 +125,6 @@ class TestAuthActions:
         with patch("vibe.cli.textual_ui.widgets.connector_auth_app.webbrowser") as wb:
             app._open_browser()
             wb.open.assert_not_called()
-
-    def test_copy_url_calls_clipboard(self) -> None:
-        app = cast(Any, _make_app())
-        app._auth_url = "https://auth.example.com/oauth"
-
-        with (
-            patch.object(
-                type(app), "app", new_callable=lambda: property(lambda s: MagicMock())
-            ),
-            patch(
-                "vibe.cli.textual_ui.widgets.connector_auth_app.copy_text_to_clipboard"
-            ) as copy_fn,
-        ):
-            app._copy_url()
-            copy_fn.assert_called_once()
-            assert copy_fn.call_args.args[1] == "https://auth.example.com/oauth"
-            assert (
-                copy_fn.call_args.kwargs["success_message"]
-                == "Auth URL copied to clipboard"
-            )
-
-    def test_copy_url_noop_without_url(self) -> None:
-        app = _make_app()
-        app._auth_url = None
-        with patch(
-            "vibe.cli.textual_ui.widgets.connector_auth_app.copy_text_to_clipboard"
-        ) as copy_fn:
-            app._copy_url()
-            copy_fn.assert_not_called()
 
     def test_toggle_url_shows_then_hides(self) -> None:
         app = cast(Any, _make_app())
@@ -273,23 +243,6 @@ class TestOptionSelection:
         with patch("vibe.cli.textual_ui.widgets.connector_auth_app.webbrowser") as wb:
             app.on_option_list_option_selected(event)
             wb.open.assert_called_once()
-
-    def test_auth_copy_dispatches(self) -> None:
-        app = cast(Any, _make_app())
-        app._auth_url = "https://auth.example.com"
-        event = MagicMock()
-        event.option.id = _AuthOptionId.COPY
-
-        with (
-            patch.object(
-                type(app), "app", new_callable=lambda: property(lambda s: MagicMock())
-            ),
-            patch(
-                "vibe.cli.textual_ui.widgets.connector_auth_app.copy_text_to_clipboard"
-            ) as copy_fn,
-        ):
-            app.on_option_list_option_selected(event)
-            copy_fn.assert_called_once()
 
     def test_auth_show_dispatches(self) -> None:
         app = cast(Any, _make_app())

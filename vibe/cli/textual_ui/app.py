@@ -21,12 +21,11 @@ from textual.app import WINDOWS, App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, VerticalGroup, VerticalScroll
 from textual.driver import Driver
-from textual.events import AppBlur, AppFocus, MouseUp
+from textual.events import AppBlur, AppFocus
 from textual.widget import Widget
 from textual.widgets import Static
 
 from vibe import __version__ as CORE_VERSION
-from vibe.cli.clipboard import copy_selection_to_clipboard, copy_text_to_clipboard
 from vibe.cli.commands import CommandAvailabilityContext, CommandRegistry
 from vibe.cli.plan_offer.adapters.http_whoami_gateway import HttpWhoAmIGateway
 from vibe.cli.plan_offer.decide_plan_offer import (
@@ -1383,19 +1382,6 @@ class VibeApp(App):  # noqa: PLR0904
             return content
         return None
 
-    async def _copy_last_agent_message(self, **kwargs: Any) -> None:
-        if (content := self._get_last_assistant_message_text()) is None:
-            self.notify(
-                "No agent message available to copy", severity="warning", timeout=3
-            )
-            return
-
-        copied_text = copy_text_to_clipboard(
-            self, content, success_message="Last agent message copied to clipboard"
-        )
-        if copied_text is not None:
-            pass
-
     async def _refresh_mcp_browser(self) -> str:
         await self.agent_loop.tool_manager.refresh_remote_tools_async()
         await self.agent_loop.refresh_system_prompt()
@@ -1486,8 +1472,6 @@ class VibeApp(App):  # noqa: PLR0904
         if self._current_bottom_app == BottomApp.ProxySetup:
             return
         await self._switch_to_proxy_setup_app()
-
-
 
     async def _show_session_picker(self, **kwargs: Any) -> None:
         cwd = str(Path.cwd())
@@ -1712,8 +1696,6 @@ class VibeApp(App):  # noqa: PLR0904
                     f"Failed to reload config: {e}", collapsed=self._tools_collapsed
                 )
             )
-
-
 
     async def _clear_history(self, **kwargs: Any) -> None:
         try:
@@ -2617,17 +2599,6 @@ class VibeApp(App):  # noqa: PLR0904
         self.notify(
             message, title="Update available", severity="information", timeout=10
         )
-
-    def action_copy_selection(self) -> None:
-        copied_text = copy_selection_to_clipboard(self, show_toast=False)
-        if copied_text is not None:
-            pass
-
-    def on_mouse_up(self, event: MouseUp) -> None:
-        if self.config.autocopy_to_clipboard:
-            copied_text = copy_selection_to_clipboard(self, show_toast=True)
-            if copied_text is not None:
-                pass
 
     def on_app_blur(self, event: AppBlur) -> None:
         self._terminal_notifier.on_blur()

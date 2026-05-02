@@ -1161,10 +1161,6 @@ class VibeAcpAgentLoop(AcpAgent):
         )
 
 
-
-
-
-
 def run_acp_server() -> None:
     try:
         asyncio.run(

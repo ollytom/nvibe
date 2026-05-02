@@ -846,9 +846,7 @@ class AgentLoop:
                     cancelled=f"<{CANCELLATION_TAG}>" in skip_reason,
                     tool_call_id=tool_call.call_id,
                 )
-                self._handle_tool_response(
-                    tool_call, skip_reason, "skipped", decision
-                )
+                self._handle_tool_response(tool_call, skip_reason, "skipped", decision)
                 return
 
             self.stats.tool_calls_agreed += 1
@@ -907,9 +905,7 @@ class AgentLoop:
                 get_user_cancellation_message(CancellationReason.TOOL_INTERRUPTED)
             )
             self.stats.tool_calls_failed += 1
-            yield self._tool_failure_event(
-                tool_call, cancel, decision, cancelled=True
-            )
+            yield self._tool_failure_event(tool_call, cancel, decision, cancelled=True)
             raise
 
         except Exception as exc:

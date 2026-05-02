@@ -66,11 +66,10 @@ class ConfigApp(Container):
         self.config = config
         self.changes: dict[str, str] = {}
         self._toggle_settings: list[tuple[str, str]] = [
-            ("autocopy_to_clipboard", "Auto-copy"),
             (
                 "file_watcher_for_autocomplete",
                 "Autocomplete watcher (may delay first autocompletion)",
-            ),
+            )
         ]
 
     def _get_current_model(self) -> str:

@@ -14,7 +14,6 @@ from textual.widgets import OptionList
 from textual.widgets.option_list import Option
 from textual.worker import Worker
 
-from vibe.cli.clipboard import copy_text_to_clipboard
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.core.tools.connectors import ConnectorRegistry
 
@@ -27,7 +26,6 @@ _OPTION_PADDING = "  "
 
 class _AuthOptionId(StrEnum):
     OPEN = auto()
-    COPY = auto()
     SHOW = auto()
 
 
@@ -88,8 +86,6 @@ class ConnectorAuthApp(Container):
         option_id = event.option.id or ""
         if option_id == _AuthOptionId.OPEN:
             self._open_browser()
-        elif option_id == _AuthOptionId.COPY:
-            self._copy_url()
         elif option_id == _AuthOptionId.SHOW:
             self._toggle_url()
 
@@ -154,12 +150,6 @@ class ConnectorAuthApp(Container):
             )
             option_list.add_option(
                 Option(
-                    Text(f"{_OPTION_PADDING}Copy URL to clipboard", no_wrap=True),
-                    id=_AuthOptionId.COPY,
-                )
-            )
-            option_list.add_option(
-                Option(
                     Text(f"{_OPTION_PADDING}Manually show the URL", no_wrap=True),
                     id=_AuthOptionId.SHOW,
                 )
@@ -196,13 +186,6 @@ class ConnectorAuthApp(Container):
         webbrowser.open(self._auth_url)
         self._status_message = "Opened in browser."
         self._set_help_text(_HELP)
-
-    def _copy_url(self) -> None:
-        if self._auth_url is None:
-            return
-        copy_text_to_clipboard(
-            self.app, self._auth_url, success_message="Auth URL copied to clipboard"
-        )
 
     def _toggle_url(self) -> None:
         if self._auth_url is None:

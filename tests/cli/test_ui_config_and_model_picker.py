@@ -51,52 +51,6 @@ async def test_config_escape_returns_to_input() -> None:
         assert len(app.query(ConfigApp)) == 0
 
 
-@pytest.mark.asyncio
-async def test_config_toggle_autocopy() -> None:
-    config = _make_config_with_models()
-    config.autocopy_to_clipboard = False
-    app = build_test_vibe_app(config=config)
-    async with app.run_test() as pilot:
-        await pilot.pause(0.1)
-        await app._show_config()
-        await pilot.pause(0.2)
-
-        # Navigate down to Auto-copy (third item, after Model + Thinking) and toggle
-        await pilot.press("down")
-        await pilot.press("down")
-        await pilot.press("enter")
-        await pilot.pause(0.1)
-
-        # Verify the toggle happened in the widget
-        config_app = app.query_one(ConfigApp)
-        assert config_app.changes.get("autocopy_to_clipboard") == "On"
-
-
-@pytest.mark.asyncio
-async def test_config_escape_saves_changes() -> None:
-    config = _make_config_with_models()
-    config.autocopy_to_clipboard = False
-    app = build_test_vibe_app(config=config)
-    async with app.run_test() as pilot:
-        await pilot.pause(0.1)
-        await app._show_config()
-        await pilot.pause(0.2)
-
-        # Toggle auto-copy (skip Model + Thinking rows)
-        await pilot.press("down")
-        await pilot.press("down")
-        await pilot.press("enter")
-        await pilot.pause(0.1)
-
-        with patch("vibe.cli.textual_ui.app.VibeConfig.save_updates") as mock_save:
-            await pilot.press("escape")
-            await pilot.pause(0.2)
-
-            mock_save.assert_called_once()
-            changes = mock_save.call_args[0][0]
-            assert changes["autocopy_to_clipboard"] is True
-
-
 # --- /model command ---
 
 
@@ -258,35 +212,6 @@ async def test_config_to_model_picker_select_returns_to_input() -> None:
             mock_save.assert_called_once_with({"active_model": "beta"})
 
         assert app._current_bottom_app == BottomApp.Input
-
-
-@pytest.mark.asyncio
-async def test_config_pending_changes_saved_before_model_picker() -> None:
-    """Toggle changes in config are saved before switching to model picker."""
-    config = _make_config_with_models()
-    config.autocopy_to_clipboard = False
-    app = build_test_vibe_app(config=config)
-    async with app.run_test() as pilot:
-        await pilot.pause(0.1)
-        await app._show_config()
-        await pilot.pause(0.2)
-
-        # Toggle auto-copy (third row, after Model + Thinking)
-        await pilot.press("down")
-        await pilot.press("down")
-        await pilot.press("enter")
-        await pilot.pause(0.1)
-
-        # Go back up to model row and open model picker
-        await pilot.press("up")
-        await pilot.press("up")
-        with patch("vibe.cli.textual_ui.app.VibeConfig.save_updates") as mock_save:
-            await pilot.press("enter")
-            await pilot.pause(0.3)
-
-            mock_save.assert_called_once()
-            changes = mock_save.call_args[0][0]
-            assert changes["autocopy_to_clipboard"] is True
 
 
 # --- /thinking command ---
