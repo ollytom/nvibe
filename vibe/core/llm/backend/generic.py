@@ -177,12 +177,7 @@ def _get_adapter(api_style: str) -> APIAdapter:
     if api_style == "openai-responses":
         return OpenAIResponsesAdapter()
     if api_style not in _ADAPTERS:
-        if api_style == "vertex-anthropic":
-            from vibe.core.llm.backend.vertex import VertexAnthropicAdapter
-
-            _ADAPTERS["vertex-anthropic"] = VertexAnthropicAdapter()
-        else:
-            raise KeyError(api_style)
+        raise KeyError(api_style)
     return _ADAPTERS[api_style]
 
 
