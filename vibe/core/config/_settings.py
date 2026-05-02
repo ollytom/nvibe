@@ -417,13 +417,6 @@ class VibeConfig(BaseSettings):
     api_timeout: float = 720.0
     auto_compact_threshold: int = 200_000
 
-    vibe_code_enabled: bool = Field(default=True, exclude=True)
-    vibe_code_base_url: str = Field(default="https://api.mistral.ai", exclude=True)
-    vibe_code_workflow_id: str = Field(default="__shared-nuage-workflow", exclude=True)
-    vibe_code_task_queue: str | None = Field(default="shared-vibe-nuage", exclude=True)
-    vibe_code_api_key_env_var: str = Field(default="MISTRAL_API_KEY", exclude=True)
-    vibe_code_project_name: str | None = Field(default=None, exclude=True)
-
     enable_experimental_hooks: bool = Field(default=False, exclude=True)
 
     providers: list[ProviderConfig] = Field(
@@ -526,10 +519,6 @@ class VibeConfig(BaseSettings):
     def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         kwargs.setdefault("exclude_none", True)
         return super().model_dump(**kwargs)
-
-    @property
-    def vibe_code_api_key(self) -> str:
-        return os.getenv(self.vibe_code_api_key_env_var, "")
 
     @property
     def system_prompt(self) -> str:

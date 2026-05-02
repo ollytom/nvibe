@@ -10,7 +10,6 @@ from vibe.cli.textual_ui.widgets.messages import (
     HookRunContainer,
     HookSystemMessageLine,
     ReasoningMessage,
-    UserMessage,
 )
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.cli.textual_ui.widgets.tools import ToolCallMessage, ToolResultMessage
@@ -47,12 +46,10 @@ class EventHandler:
         mount_callback: Callable,
         get_tools_collapsed: Callable[[], bool],
         on_profile_changed: Callable[[], None] | None = None,
-        is_remote: bool = False,
     ) -> None:
         self.mount_callback = mount_callback
         self.get_tools_collapsed = get_tools_collapsed
         self.on_profile_changed = on_profile_changed
-        self.is_remote = is_remote
         self.tool_calls: dict[str, ToolCallMessage] = {}
         self.current_compact: CompactMessage | None = None
         self.current_streaming_message: AssistantMessage | None = None
@@ -113,8 +110,6 @@ class EventHandler:
                     self.on_profile_changed()
             case UserMessageEvent():
                 await self.finalize_streaming()
-                if self.is_remote:
-                    await self.mount_callback(UserMessage(event.content))
             case HookEvent():
                 await self._handle_hook_event(event, loading_widget)
             case WaitingForInputEvent():

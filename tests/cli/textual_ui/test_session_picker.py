@@ -28,14 +28,6 @@ def sample_sessions() -> list[ResumeSessionInfo]:
             title="Session B",
             end_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
         ),
-        ResumeSessionInfo(
-            session_id="session-c",
-            source="remote",
-            cwd="/test",
-            title="Session C",
-            end_time=(datetime.now(UTC) - timedelta(days=1)).isoformat(),
-            status="RUNNING",
-        ),
     ]
 
 
@@ -44,7 +36,6 @@ def sample_latest_messages() -> dict[str, str]:
     return {
         "local:session-a": "Help me fix this bug",
         "local:session-b": "Refactor the authentication module",
-        "remote:session-c": "Add unit tests for the API",
     }
 
 
@@ -119,10 +110,10 @@ class TestSessionPickerMessages:
 
     def test_session_selected_with_full_uuid(self) -> None:
         session_id = "abc12345-6789-0123-4567-89abcdef0123"
-        option_id = f"remote:{session_id}"
-        msg = SessionPickerApp.SessionSelected(option_id, "remote", session_id)
+        option_id = f"local:{session_id}"
+        msg = SessionPickerApp.SessionSelected(option_id, "local", session_id)
         assert msg.option_id == option_id
-        assert msg.source == "remote"
+        assert msg.source == "local"
         assert msg.session_id == session_id
 
     def test_cancelled_can_be_instantiated(self) -> None:
