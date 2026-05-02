@@ -26,7 +26,6 @@ from vibe.core.session.session_loader import SessionLoader
 from vibe.core.trusted_folders import find_trustable_files, trusted_folders_manager
 from vibe.core.types import LLMMessage, OutputFormat, Role
 from vibe.core.utils import ConversationLimitException
-from vibe.setup.onboarding import run_onboarding
 
 
 def get_initial_agent_name(args: argparse.Namespace) -> str:
@@ -54,15 +53,12 @@ def load_config_or_exit(*, interactive: bool) -> VibeConfig:
     try:
         return VibeConfig.load()
     except MissingAPIKeyError as e:
-        if not interactive:
-            print(
-                f"Error: {e}. Set the environment variable (e.g. in ~/.vibe/.env "
-                "or your shell), or run `vibe --setup` once interactively.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        run_onboarding()
-        return VibeConfig.load()
+        print(
+            f"Error: {e}. Set the environment variable (e.g. in ~/.vibe/.env "
+            "or your shell), or run `vibe --setup` once interactively.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     except MissingPromptFileError as e:
         rprint(f"[yellow]Invalid system prompt id: {e}[/]")
         sys.exit(1)
@@ -179,8 +175,8 @@ def run_cli(args: argparse.Namespace) -> None:
     bootstrap_config_files()
 
     if args.setup:
-        run_onboarding()
-        sys.exit(0)
+        print("setup unsupported")
+        sys.exit(1)
 
     try:
         initial_agent_name = get_initial_agent_name(args)
