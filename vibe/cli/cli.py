@@ -174,10 +174,6 @@ def run_cli(args: argparse.Namespace) -> None:
     load_dotenv_values()
     bootstrap_config_files()
 
-    if args.setup:
-        print("setup unsupported")
-        sys.exit(1)
-
     try:
         initial_agent_name = get_initial_agent_name(args)
         is_interactive = args.prompt is None
@@ -245,5 +241,4 @@ def run_cli(args: argparse.Namespace) -> None:
             )
 
     except (KeyboardInterrupt, EOFError):
-        rprint("\n[dim]Bye![/]")
         sys.exit(0)
