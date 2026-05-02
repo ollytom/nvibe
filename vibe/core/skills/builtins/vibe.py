@@ -60,7 +60,6 @@ environment variables with the `VIBE_` prefix (e.g., `VIBE_ACTIVE_MODEL=local`).
 active_model = "mistral-medium-3.5"  # Model alias to use (see [[models]])
 
 # UI preferences
-vim_keybindings = false
 file_watcher_for_autocomplete = false
 
 # Behavior

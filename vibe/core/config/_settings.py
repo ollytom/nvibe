@@ -402,7 +402,6 @@ DEFAULT_ACTIVE_MODEL = DEFAULT_MODELS[0].alias
 
 class VibeConfig(BaseSettings):
     active_model: str = DEFAULT_ACTIVE_MODEL
-    vim_keybindings: bool = False
     file_watcher_for_autocomplete: bool = False
     displayed_workdir: str = ""
     context_warnings: bool = False
