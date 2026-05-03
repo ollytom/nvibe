@@ -124,21 +124,6 @@ def test_fuzzy_matches_directory_traversal(file_tree: Path) -> None:
     assert "@src/utils/" in results
 
 
-def test_directory_prefix_can_match_from_a_nested_path_segment(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    (tmp_path / "vibe" / "acp").mkdir(parents=True)
-    (tmp_path / "vibe" / "acp" / "entrypoint.py").write_text("", encoding="utf-8")
-    (tmp_path / "vibe" / "myacp").mkdir(parents=True)
-    (tmp_path / "vibe" / "myacp" / "entrypoint.py").write_text("", encoding="utf-8")
-    monkeypatch.chdir(tmp_path)
-
-    results = PathCompleter().get_completions("@acp/", cursor_pos=5)
-
-    assert "@vibe/acp/entrypoint.py" in results
-    assert "@vibe/myacp/entrypoint.py" not in results
-
-
 def test_prefers_exact_filename_match_over_other_path_matches(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

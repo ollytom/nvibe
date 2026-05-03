@@ -2,13 +2,13 @@
 
 Conventions for AI agents and humans contributing to **Mistral Vibe** — a Python 3.12+ CLI coding assistant managed with `uv`.
 
-Layout: `vibe/core` is the engine (agent loop, tools, LLM backends, config); `vibe/cli` is the Textual TUI; `vibe/acp` bridges to the Agent Client Protocol; `vibe/setup` runs first-run wizards. Tests live in `tests/` with autouse fixtures in `conftest.py` and test doubles in `tests/stubs/`.
+Layout: `vibe/core` is the engine (agent loop, tools, LLM backends, config); `vibe/cli` is the Textual TUI; `vibe/setup` runs first-run wizards. Tests live in `tests/` with autouse fixtures in `conftest.py` and test doubles in `tests/stubs/`.
 
 ## Commands
 
 Always go through `uv` — never invoke bare `python` or `pip`.
 
-- `uv run vibe` / `uv run vibe-acp` — the two entry points.
+- `uv run vibe` the main program entrypoint.
 - `uv run pytest` — full suite (parallel via `pytest-xdist`).
 - `uv run pyright` — strict type check.
 - `uv run ruff check --fix .` and `uv run ruff format .` — run both after every code change and report the files modified.
@@ -86,11 +86,6 @@ Always go through `uv` — never invoke bare `python` or `pip`.
 ## Git
 
 - NEVER git push
-
-## Editor tip
-
-In Cursor / Pyright, the "Add import" quick fix is missing — use the workspace snippets `acpschema`, `acphelpers`, `vibetypes`, `vibeconfig` to insert the import line, then rename the symbol.
-
 
 ## Autoimprovement
 
