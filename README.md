@@ -1,15 +1,24 @@
-nvibe is a slimmed-down fork of [Mistral Vibe].
-Removals include:
+nvibe is a slimmed-down fork of [Mistral Vibe],
+a LLM harness specialised for programming.
+It runs in a terminal emulator.
+
+Notable removals from upstream Vibe include:
 
 - user telemetry
 - onboarding screens
 - mouse interaction
 - speech-to-text and text-to-speech
 - app update notifications
+- proprietary Le Chat features (e.g. web search, remote workspaces)
+- Anthropic API support
+- [Agent Control  Protocol (ACP)] support
 
-Mistral Vibe is a command-line coding assistant powered by Mistral's models. It provides a conversational interface to your codebase, allowing you to use natural language to explore, modify, and interact with your projects through a powerful set of tools.
+Why vibe? [pi] v0.72.1 clocks in at approximately 140,000 lines of code.
+nvibe is 7x smaller at around 20,000 lines of code.
 
 [Mistral Vibe]: https://mistral.ai/products/vibe
+[pi]: https://pi.dev
+[ACP]: https://acp-protocol.org
 
 ## Install
 
@@ -192,30 +201,6 @@ Example:
 ```bash
 vibe --prompt "Analyze the codebase" --max-turns 5 --max-price 1.0 --output json
 ```
-
-## Voice Mode
-
-> [!WARNING]
-> Voice mode is experimental and may change in future releases.
-
-Voice mode allows you to dictate input using your microphone instead of typing.
-
-### Activating Voice Mode
-
-Toggle voice mode on or off with the `/voice` slash command:
-
-```
-> /voice
-```
-
-### Recording Shortcuts
-
-| Shortcut | Action           |
-| -------- | ---------------- |
-| `Ctrl+R` | Start recording  |
-| Any key  | Stop recording   |
-| `Escape` | Cancel recording |
-| `Ctrl+C` | Cancel recording |
 
 ## Slash Commands
 
@@ -551,10 +536,6 @@ This affects where Vibe looks for:
 - `prompts/` - Custom system prompts
 - `tools/` - Custom tools
 - `logs/` - Session logs
-
-## Editors/IDEs
-
-Mistral Vibe can be used in text editors and IDEs that support [Agent Client Protocol](https://agentclientprotocol.com/overview/clients). See the [ACP Setup documentation](docs/acp-setup.md) for setup instructions for various editors and IDEs.
 
 ## License
 
