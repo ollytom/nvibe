@@ -37,10 +37,7 @@ If installing from source, run from the project root:
   - Ask interactive questions to gather user input (`ask_user_question`).
   - Delegate tasks to subagents for parallel work (`task`).
 - **Project-Aware Context**: Vibe automatically scans your project's file structure and Git status to provide relevant context to the agent, improving its understanding of your codebase.
-- **Advanced CLI Experience**: Built with modern libraries for a smooth and efficient workflow.
-  - Autocompletion for slash commands (`/`) and file paths (`@`).
-  - Persistent command history.
-  - Beautiful Themes.
+- Autocompletion for slash commands (`/`) and file paths (`@`).
 - **Highly Configurable**: Customize models, providers, tool permissions, and UI preferences through a simple `config.toml` file.
 - **Safety First**: Features tool execution approval.
 - **Multiple Built-in Agents**: Choose from different agent profiles tailored for specific workflows.
@@ -155,7 +152,6 @@ Simply run `vibe` to enter the interactive chat loop.
 - **External Editor**: Press `Ctrl+G` to edit your current input in an external editor.
 - **Tool Output Toggle**: Press `Ctrl+O` to toggle the tool output view.
 - **Todo View Toggle**: Press `Ctrl+T` to toggle the todo list view.
-- **Debug Console**: Press `Ctrl+\` to toggle the debug console.
 - **Auto-Approve Toggle**: Press `Shift+Tab` to toggle auto-approve mode on/off.
 
 You can start Vibe with a prompt using the following command:
@@ -497,18 +493,6 @@ vibe --workdir /path/to/project
 ```
 
 This is useful when you want to run Vibe from a different location than your current directory.
-
-### Update Settings
-
-#### Auto-Update
-
-Vibe includes an automatic update feature that keeps your installation current. This is enabled by default.
-
-To disable auto-updates, add this to your `config.toml`:
-
-```toml
-enable_auto_update = false
-```
 
 ### Notification Settings
 

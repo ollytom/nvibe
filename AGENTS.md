@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Conventions for AI agents and humans contributing to **Mistral Vibe** — a Python 3.12+ CLI coding assistant managed with `uv`.
+Conventions for contributing to **Mistral Vibe**: Python 3.12+ terminal emulator coding assistant managed with `uv`.
 
 Layout: `vibe/core` is the engine (agent loop, tools, LLM backends, config); `vibe/cli` is the Textual TUI; `vibe/setup` runs first-run wizards. Tests live in `tests/` with autouse fixtures in `conftest.py` and test doubles in `tests/stubs/`.
 
@@ -27,13 +27,13 @@ Always go through `uv` — never invoke bare `python` or `pip`.
 
 - Prefer `match` / `case` over long `if` / `elif` chains.
 - Use the walrus operator `:=` only when it shortens code and improves clarity.
-- Be a never-nester: early returns and guard clauses over nested blocks.
+- Early returns and guard clauses over nested blocks.
 - Modern type hints only: built-in generics (`list`, `dict`) and `|` unions. Never import `Optional`, `Union`, `Dict`, `List` from `typing`.
 - Use `pathlib.Path` (and `anyio.Path` in async paths) instead of `os.path`.
 - Use f-strings, comprehensions, and context managers; follow PEP 8.
 - Enums: `StrEnum` / `IntEnum` with `auto()` and UPPERCASE members. For type-mixing, the mix-in type comes before `Enum` in the bases. Add methods or `@property` rather than parallel lookup tables.
-- Write declarative, minimalist code: express intent, drop boilerplate.
-- Never call a private method from outside of it's class
+- Write declarative, minimalist code; express intent, drop boilerplate.
+- Never call a private method from outside of its class
 
 ## Typing & imports
 
@@ -85,7 +85,7 @@ Always go through `uv` — never invoke bare `python` or `pip`.
 
 ## Git
 
-- NEVER git push
+NEVER git push
 
 ## Autoimprovement
 
