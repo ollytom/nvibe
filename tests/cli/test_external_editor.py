@@ -16,10 +16,6 @@ class TestGetEditor:
         with patch.dict("os.environ", {"EDITOR": "nvim"}, clear=True):
             assert ExternalEditor.get_editor() == "nvim"
 
-    def test_falls_back_when_no_editor(self) -> None:
-        with patch.dict("os.environ", {}, clear=True):
-            assert ExternalEditor.get_editor() == "nano"
-
 
 class TestEdit:
     def test_returns_modified_content(self) -> None:

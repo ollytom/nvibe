@@ -14,7 +14,7 @@ class ExternalEditor:
 
     @staticmethod
     def get_editor() -> str:
-        return os.environ.get("VISUAL") or os.environ.get("EDITOR") or "nano"
+        return os.environ.get("VISUAL") or os.environ.get("EDITOR") or "ed"
 
     def edit(self, initial_content: str = "") -> str | None:
         editor = self.get_editor()
