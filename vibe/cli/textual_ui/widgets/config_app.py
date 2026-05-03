@@ -65,12 +65,7 @@ class ConfigApp(Container):
         super().__init__(id="config-app")
         self.config = config
         self.changes: dict[str, str] = {}
-        self._toggle_settings: list[tuple[str, str]] = [
-            (
-                "file_watcher_for_autocomplete",
-                "Autocomplete watcher (may delay first autocompletion)",
-            )
-        ]
+        self._toggle_settings: list[tuple[str, str]] = []
 
     def _get_current_model(self) -> str:
         return str(getattr(self.config, "active_model", ""))

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import atexit
-from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +12,6 @@ from vibe.core.autocompletion.file_indexer.store import (
     FileIndexStore,
     IndexEntry,
 )
-from vibe.core.autocompletion.file_indexer.watcher import Change, WatchController
 
 
 @dataclass(slots=True)
@@ -26,15 +24,13 @@ class FileIndexer:
     def __init__(
         self,
         mass_change_threshold: int = 200,
-        should_enable_watcher: Callable[[], bool] | None = None,
     ) -> None:
-        self._lock = RLock()  # guards _store snapshot access and watcher callbacks.
+        self._lock = RLock()  # guards _store snapshot access.
         self._stats = FileIndexStats()
         self._ignore_rules = IgnoreRules()
         self._store = FileIndexStore(
             self._ignore_rules, self._stats, mass_change_threshold=mass_change_threshold
         )
-        self._watcher = WatchController(self._handle_watch_changes)
         self._rebuild_executor = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="file-indexer"
         )
@@ -44,7 +40,6 @@ class FileIndexer:
         )  # coordinates updates to _active_rebuilds and _target_root.
         self._target_root: Path | None = None
         self._shutdown = False
-        self._should_enable_watcher = should_enable_watcher or (lambda: False)
 
         atexit.register(self.shutdown)
 
@@ -61,7 +56,6 @@ class FileIndexer:
             )
 
         if root_changed:
-            self._watcher.stop()
             with self._rebuild_lock:  # cancel rebuilds targeting other roots
                 self._target_root = resolved_root
                 for other_root, task in self._active_rebuilds.items():
@@ -79,16 +73,10 @@ class FileIndexer:
             self._start_background_rebuild(resolved_root)
             self._wait_for_rebuild(resolved_root)
 
-        if self._should_enable_watcher():
-            self._watcher.start(resolved_root)
-        else:
-            self._watcher.stop()
-
         with self._lock:  # ensure root reference is fresh before snapshotting
             return self._store.snapshot()
 
     def refresh(self) -> None:
-        self._watcher.stop()
         with self._rebuild_lock:
             for task in self._active_rebuilds.values():
                 task.cancel_event.set()
@@ -168,20 +156,3 @@ class FileIndexer:
             task = self._active_rebuilds.get(root)
         if task:
             task.done_event.wait()
-
-    def _handle_watch_changes(
-        self, root: Path, raw_changes: Iterable[tuple[Change, str]]
-    ) -> None:
-        normalized: list[tuple[Change, Path]] = []
-        for change, path_str in raw_changes:
-            if change not in {Change.added, Change.deleted, Change.modified}:
-                continue
-            normalized.append((change, Path(path_str).resolve()))
-
-        if not normalized:
-            return
-
-        with self._lock:  # make watcher ignore stale roots
-            if self._store.root != root:
-                return
-            self._store.apply_changes(normalized)

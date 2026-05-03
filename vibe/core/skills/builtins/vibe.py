@@ -59,9 +59,6 @@ environment variables with the `VIBE_` prefix (e.g., `VIBE_ACTIVE_MODEL=local`).
 # Model selection
 active_model = "mistral-medium-3.5"  # Model alias to use (see [[models]])
 
-# UI preferences
-file_watcher_for_autocomplete = false
-
 # Behavior
 bypass_tool_permissions = false    # Skip tool approval prompts
 system_prompt_id = "cli"          # System prompt: "cli" or custom .md filename

@@ -55,7 +55,6 @@ class ChatInputContainer(Vertical):
         safety: AgentSafety = AgentSafety.NEUTRAL,
         agent_name: str = "",
         skill_entries_getter: Callable[[], list[tuple[str, str]]] | None = None,
-        file_watcher_for_autocomplete_getter: Callable[[], bool] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -64,18 +63,13 @@ class ChatInputContainer(Vertical):
         self._safety = safety
         self._agent_name = agent_name
         self._skill_entries_getter = skill_entries_getter
-        self._file_watcher_for_autocomplete_getter = (
-            file_watcher_for_autocomplete_getter
-        )
         self._custom_border_label: str | None = None
         self._custom_border_class: str | None = None
 
         self._completion_manager = MultiCompletionManager([
             SlashCommandController(CommandCompleter(self._get_slash_entries), self),
             PathCompletionController(
-                PathCompleter(
-                    watcher_enabled_getter=self._file_watcher_for_autocomplete_getter
-                ),
+                PathCompleter(),
                 self,
             ),
         ])

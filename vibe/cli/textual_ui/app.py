@@ -376,7 +376,6 @@ class VibeApp(App):  # noqa: PLR0904
                 safety=self.agent_loop.agent_profile.safety,
                 agent_name=self.agent_loop.agent_profile.display_name.lower(),
                 skill_entries_getter=self._get_skill_entries,
-                file_watcher_for_autocomplete_getter=self._is_file_watcher_enabled,
             )
 
         with Horizontal(id="bottom-bar"):
@@ -468,9 +467,6 @@ class VibeApp(App):  # noqa: PLR0904
             self.run_worker(
                 self._handle_user_message(self._initial_prompt), exclusive=False
             )
-
-    def _is_file_watcher_enabled(self) -> bool:
-        return self.config.file_watcher_for_autocomplete
 
     def on_key(self) -> None:
         if self._fatal_init_error:

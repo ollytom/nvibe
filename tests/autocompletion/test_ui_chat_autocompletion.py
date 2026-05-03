@@ -266,7 +266,6 @@ async def test_finds_files_recursively_by_filename(
 
         await pilot.press(*"@entryp")
 
-        popup_content = popup.content_text
         assert popup.styles.display == "block"
 
 

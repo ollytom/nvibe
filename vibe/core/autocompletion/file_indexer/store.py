@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 
 from vibe.core.autocompletion.file_indexer.ignore_rules import IgnoreRules
-from vibe.core.autocompletion.file_indexer.watcher import Change
 
 ASCII_CODEPOINT_LIMIT = 128
 
@@ -82,50 +81,6 @@ class FileIndexStore:
 
         return list(self._ordered_entries)
 
-    def apply_changes(self, changes: list[tuple[Change, Path]]) -> None:
-        if self._root is None:
-            return
-
-        if len(changes) > self._mass_change_threshold:
-            self.rebuild(self._root)
-            return
-
-        modified = False
-        for change, path in changes:
-            try:
-                rel_str = path.relative_to(self._root).as_posix()
-            except ValueError:
-                continue
-
-            if not rel_str:
-                continue
-
-            if change is Change.deleted:
-                if self._remove_entry(rel_str):
-                    modified = True
-                continue
-
-            if not path.exists():
-                continue
-
-            if path.is_dir():
-                dir_entry = self._create_entry(rel_str, path.name, path, True)
-                if dir_entry:
-                    self._entries_by_rel[rel_str] = dir_entry
-                    modified = True
-                for entry in self._walk_directory(path, rel_str):
-                    self._entries_by_rel[entry.rel] = entry
-                    modified = True
-            else:
-                file_entry = self._create_entry(rel_str, path.name, path, False)
-                if file_entry:
-                    self._entries_by_rel[file_entry.rel] = file_entry
-                    modified = True
-
-        if modified:
-            self._ordered_entries = None
-            self._stats.incremental_updates += 1
-
     def _create_entry(
         self, rel_str: str, name: str, path: Path, is_dir: bool
     ) -> IndexEntry | None:
@@ -173,16 +128,3 @@ class FileIndexStore:
             pass
 
         return results
-
-    def _remove_entry(self, rel_str: str) -> bool:
-        entry = self._entries_by_rel.pop(rel_str, None)
-        if not entry:
-            return False
-
-        if entry.is_dir:
-            prefix = f"{rel_str}/"
-            to_remove = [key for key in self._entries_by_rel if key.startswith(prefix)]
-            for key in to_remove:
-                self._entries_by_rel.pop(key, None)
-
-        return True

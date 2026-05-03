@@ -402,7 +402,6 @@ DEFAULT_ACTIVE_MODEL = DEFAULT_MODELS[0].alias
 
 class VibeConfig(BaseSettings):
     active_model: str = DEFAULT_ACTIVE_MODEL
-    file_watcher_for_autocomplete: bool = False
     displayed_workdir: str = ""
     context_warnings: bool = False
     bypass_tool_permissions: bool = False
