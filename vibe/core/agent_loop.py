@@ -51,7 +51,6 @@ from vibe.core.rewind import RewindManager
 from vibe.core.scratchpad import init_scratchpad
 from vibe.core.session.session_id import extract_suffix, generate_session_id
 from vibe.core.session.session_logger import SessionLogger
-from vibe.core.session.session_migration import migrate_sessions_entrypoint
 from vibe.core.skills.manager import SkillManager
 from vibe.core.system_prompt import get_universal_system_prompt
 from vibe.core.tools.base import (
@@ -270,13 +269,6 @@ class AgentLoop:
             save_messages=self._save_messages,
             reset_session=self._reset_session,
         )
-
-        Thread(
-            target=migrate_sessions_entrypoint,
-            args=(config.session_logging,),
-            daemon=True,
-            name="migrate_sessions",
-        ).start()
 
         if defer_heavy_init:
             self._start_deferred_init()
