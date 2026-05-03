@@ -1079,34 +1079,7 @@ ContextProgress {
     margin-top: 1;
 }
 
-/* Debug Console */
 
-#debug-console {
-    dock: right;
-    width: 40%;
-    max-width: 80;
-    min-width: 40;
-    height: 100%;
-    background: transparent;
-    border-left: solid ansi_bright_black;
-    padding: 0 1;
-}
-
-#debug-console-header {
-    width: 100%;
-    height: auto;
-    color: ansi_default;
-    padding: 0 0 1 0;
-    text-align: left;
-}
-
-#debug-console-log {
-    width: 100%;
-    height: 1fr;
-    background: transparent;
-    overflow-x: hidden;
-    scrollbar-size: 1 1;
-}
 
 #modelpicker-app {
     width: 100%;

@@ -42,7 +42,6 @@ from vibe.cli.textual_ui.widgets.compact import CompactMessage
 from vibe.cli.textual_ui.widgets.config_app import ConfigApp
 from vibe.cli.textual_ui.widgets.connector_auth_app import ConnectorAuthApp
 from vibe.cli.textual_ui.widgets.context_progress import ContextProgress, TokenState
-from vibe.cli.textual_ui.widgets.debug_console import DebugConsole
 from vibe.cli.textual_ui.widgets.feedback_bar import FeedbackBar
 from vibe.cli.textual_ui.widgets.feedback_bar_manager import FeedbackBarManager
 from vibe.cli.textual_ui.widgets.load_more import HistoryLoadMoreRequested
@@ -266,7 +265,7 @@ class VibeApp(App):  # noqa: PLR0904
         Binding(
             "shift+down", "scroll_chat_down", "Scroll Down", show=False, priority=True
         ),
-        Binding("ctrl+backslash", "toggle_debug_console", "Debug Console", show=False),
+
         Binding("alt+up", "rewind_prev", "Rewind Previous", show=False, priority=True),
         Binding("ctrl+p", "rewind_prev", "Rewind Previous", show=False, priority=True),
         Binding("alt+down", "rewind_next", "Rewind Next", show=False, priority=True),
@@ -323,7 +322,7 @@ class VibeApp(App):  # noqa: PLR0904
         self._cached_chat: ChatScroll | None = None
         self._cached_loading_area: Widget | None = None
         self._log_reader = LogReader()
-        self._debug_console: DebugConsole | None = None
+
         self._switch_agent_generation = 0
 
         self._rewind_mode = False
@@ -2036,13 +2035,7 @@ class VibeApp(App):  # noqa: PLR0904
 
         self.call_after_refresh(schedule_switch)
 
-    async def action_toggle_debug_console(self, **kwargs: Any) -> None:
-        if self._debug_console is not None:
-            await self._debug_console.remove()
-            self._debug_console = None
-        else:
-            self._debug_console = DebugConsole(log_reader=self._log_reader)
-            await self.mount(self._debug_console)
+
 
     def _get_chat_input(self) -> ChatInputContainer | None:
         input_widgets = self.query(ChatInputContainer)

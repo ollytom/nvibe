@@ -74,11 +74,7 @@ class CommandRegistry:
                 description="Show path to current interaction log file",
                 handler="_show_log_path",
             ),
-            "debug": Command(
-                aliases=frozenset(["/debug"]),
-                description="Toggle debug console",
-                handler="action_toggle_debug_console",
-            ),
+
             "compact": Command(
                 aliases=frozenset(["/compact"]),
                 description="Compact conversation history by summarizing. Optionally pass instructions to guide the summary",
