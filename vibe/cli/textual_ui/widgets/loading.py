@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime
-import random
 from time import time
-from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -38,39 +35,6 @@ class LoadingWidget(Static):
         MistralColors.RED,
     )
 
-    EASTER_EGGS: ClassVar[list[str]] = [
-        "Eating a chocolatine",
-        "Eating a pain au chocolat",
-        "Réflexion",
-        "Analyse",
-        "Contemplation",
-        "Synthèse",
-        "Reading Proust",
-        "Oui oui baguette",
-        "Counting Rs in strawberry",
-        "Seeding Mistral weights",
-        "Vibing",
-        "Sending good vibes",
-        "Petting le chat",
-    ]
-
-    EASTER_EGGS_HALLOWEEN: ClassVar[list[str]] = [
-        "Trick or treating",
-        "Carving pumpkins",
-        "Summoning spirits",
-        "Brewing potions",
-        "Haunting the terminal",
-        "Petting le chat noir",
-    ]
-
-    EASTER_EGGS_DECEMBER: ClassVar[list[str]] = [
-        "Wrapping presents",
-        "Decorating the tree",
-        "Drinking hot chocolate",
-        "Building snowmen",
-        "Writing holiday cards",
-    ]
-
     def __init__(self, status: str | None = None, *, show_hint: bool = True) -> None:
         super().__init__(classes="loading-widget")
         self.status = status or self._get_default_status()
@@ -86,28 +50,8 @@ class LoadingWidget(Static):
         self._paused_total: float = 0.0
         self._pause_start: float | None = None
 
-    def _get_easter_egg(self) -> str | None:
-        EASTER_EGG_PROBABILITY = 0.10
-        if random.random() < EASTER_EGG_PROBABILITY:
-            available_eggs = list(self.EASTER_EGGS)
-
-            OCTOBER = 10
-            HALLOWEEN_DAY = 31
-            DECEMBER = 12
-            now = datetime.now()
-            if now.month == OCTOBER and now.day == HALLOWEEN_DAY:
-                available_eggs.extend(self.EASTER_EGGS_HALLOWEEN)
-            if now.month == DECEMBER:
-                available_eggs.extend(self.EASTER_EGGS_DECEMBER)
-
-            return random.choice(available_eggs)
-        return None
-
     def _get_default_status(self) -> str:
-        return self._get_easter_egg() or DEFAULT_LOADING_STATUS
-
-    def _apply_easter_egg(self, status: str) -> str:
-        return self._get_easter_egg() or status
+        return DEFAULT_LOADING_STATUS
 
     def pause_timer(self) -> None:
         if self._pause_start is None:
@@ -119,7 +63,7 @@ class LoadingWidget(Static):
             self._pause_start = None
 
     def set_status(self, status: str) -> None:
-        self.status = self._apply_easter_egg(status)
+        self.status = status
         if self._status_widget:
             self._status_widget.update(self._build_status_text())
 
