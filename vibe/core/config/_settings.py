@@ -417,8 +417,6 @@ class VibeConfig(BaseSettings):
     api_timeout: float = 720.0
     auto_compact_threshold: int = 200_000
 
-    enable_experimental_hooks: bool = Field(default=False, exclude=True)
-
     providers: list[ProviderConfig] = Field(
         default_factory=lambda: list(DEFAULT_PROVIDERS)
     )

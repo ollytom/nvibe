@@ -95,7 +95,6 @@ from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents import AgentProfile
 from vibe.core.autocompletion.path_prompt_adapter import render_path_prompt
 from vibe.core.config import VibeConfig
-from vibe.core.hooks.models import HookStartEvent
 from vibe.core.log_reader import LogReader
 from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
@@ -439,8 +438,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._schedule_update_notification()
 
         self.call_after_refresh(self._refresh_banner)
-        self._show_hook_config_issues_once()
-
         self.run_worker(self._watch_init_completion(), exclusive=False)
 
         if self._show_resume_picker:
@@ -450,15 +447,6 @@ class VibeApp(App):  # noqa: PLR0904
 
         gc.collect()
         gc.freeze()
-
-    def _show_hook_config_issues_once(self) -> None:
-        for issue in self.agent_loop.hook_config_issues:
-            self.notify(
-                f"{issue.file}\n{issue.message}",
-                severity="warning",
-                markup=False,
-                timeout=10,
-            )
 
     async def _watch_init_completion(self) -> None:
         """Show 'Initializing' loading indicator until background init finishes."""
@@ -1043,8 +1031,6 @@ class VibeApp(App):  # noqa: PLR0904
         async for event in events:
             if isinstance(event, WaitingForInputEvent):
                 await self._remove_loading_widget()
-            elif isinstance(event, HookStartEvent):
-                await self._ensure_loading_widget(f"Running hook {event.hook_name}")
             elif self._loading_widget is None and is_progress_event(event):
                 await self._ensure_loading_widget()
             if self.event_handler:

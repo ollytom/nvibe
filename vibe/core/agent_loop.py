@@ -20,8 +20,6 @@ from pydantic import BaseModel
 from vibe.core.agents.manager import AgentManager
 from vibe.core.agents.models import AgentProfile, BuiltinAgentName
 from vibe.core.config import ModelConfig, ProviderConfig, VibeConfig
-from vibe.core.hooks.manager import HooksManager
-from vibe.core.hooks.models import HookConfigResult, HookType, HookUserMessage
 from vibe.core.llm.backend.factory import BACKEND_FACTORY
 from vibe.core.llm.exceptions import BackendError
 from vibe.core.llm.format import (
@@ -172,7 +170,7 @@ def requires_init(fn: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class AgentLoop:
-    def __init__(  # noqa: PLR0913, PLR0915
+    def __init__(  # noqa: PLR0913
         self,
         config: VibeConfig,
         *,
@@ -186,7 +184,6 @@ class AgentLoop:
         is_subagent: bool = False,
         defer_heavy_init: bool = False,
         headless: bool = False,
-        hook_config_result: HookConfigResult | None = None,
     ) -> None:
         self._base_config = config
         self._headless = headless
@@ -268,13 +265,6 @@ class AgentLoop:
         self._approval_lock = asyncio.Lock()
 
         self.session_logger = SessionLogger(config.session_logging, self.session_id)
-        self._hook_config_result = hook_config_result
-        self._hooks_manager = (
-            HooksManager(hook_config_result.hooks) if hook_config_result else None
-        )
-        self.hook_config_issues = (
-            hook_config_result.issues if hook_config_result else []
-        )
         self.rewind_manager = RewindManager(
             messages=self.messages,
             save_messages=self._save_messages,
@@ -586,9 +576,6 @@ class AgentLoop:
 
         yield UserMessageEvent(content=user_msg, message_id=user_message.message_id)
 
-        if self._hooks_manager:
-            self._hooks_manager.reset_retry_count()
-
         try:
             should_break_loop = False
             first_llm_turn = True
@@ -620,25 +607,6 @@ class AgentLoop:
 
                 if user_cancelled:
                     return
-
-                if should_break_loop and self._hooks_manager:
-                    hook_retry: HookUserMessage | None = None
-                    async for hook_event in self._hooks_manager.run(
-                        HookType.POST_AGENT_TURN, self.session_id, self.session_logger
-                    ):
-                        if isinstance(hook_event, HookUserMessage):
-                            hook_retry = hook_event
-                        else:
-                            yield hook_event
-                    if hook_retry is not None:
-                        self.messages.append(
-                            LLMMessage(
-                                role=Role.user,
-                                content=hook_retry.content,
-                                injected=True,
-                            )
-                        )
-                        should_break_loop = False
 
         finally:
             await self._save_messages()
@@ -1200,7 +1168,6 @@ class AgentLoop:
             enable_streaming=self.enable_streaming,
             entrypoint_metadata=self.entrypoint_metadata or {},
             defer_heavy_init=True,
-            hook_config_result=self._hook_config_result,
         )
         forked.session_id = generate_session_id(suffix=extract_suffix(self.session_id))
         forked.parent_session_id = self.session_id

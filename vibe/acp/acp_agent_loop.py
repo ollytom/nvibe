@@ -114,7 +114,6 @@ from vibe.core.config import (
     VibeConfig,
     load_dotenv_values,
 )
-from vibe.core.hooks.config import load_hooks_from_fs
 from vibe.core.proxy_setup import (
     ProxySetupError,
     parse_proxy_command,
@@ -281,15 +280,12 @@ class VibeAcpAgentLoop(AcpAgent):
 
         return session
 
-    def _create_agent_loop(
-        self, config: VibeConfig, agent_name: str, hook_config_result: Any = None
-    ) -> AgentLoop:
+    def _create_agent_loop(self, config: VibeConfig, agent_name: str) -> AgentLoop:
         agent_loop = AgentLoop(
             config=config,
             agent_name=agent_name,
             enable_streaming=True,
             defer_heavy_init=True,
-            hook_config_result=hook_config_result,
         )
         agent_loop.agent_manager.register_agent(CHAT_AGENT)
         return agent_loop
@@ -317,12 +313,9 @@ class VibeAcpAgentLoop(AcpAgent):
         os.chdir(cwd)
 
         config = self._load_config()
-        hook_config_result = load_hooks_from_fs(config)
 
         try:
-            agent_loop = self._create_agent_loop(
-                config, BuiltinAgentName.DEFAULT, hook_config_result=hook_config_result
-            )
+            agent_loop = self._create_agent_loop(config, BuiltinAgentName.DEFAULT)
             # NOTE: For now, we pin session.id to agent_loop.session_id right after init time.
             # We should just use agent_loop.session_id everywhere, but it can still change during
             # session lifetime (e.g. agent_loop.compact is called).
@@ -540,7 +533,6 @@ class VibeAcpAgentLoop(AcpAgent):
         os.chdir(cwd)
 
         config = self._load_config()
-        hook_config_result = load_hooks_from_fs(config)
 
         session_dir = SessionLoader.find_session_by_id(
             session_id, config.session_logging
@@ -553,9 +545,7 @@ class VibeAcpAgentLoop(AcpAgent):
         except Exception as e:
             raise SessionLoadError(session_id, str(e)) from e
 
-        agent_loop = self._create_agent_loop(
-            config, BuiltinAgentName.DEFAULT, hook_config_result=hook_config_result
-        )
+        agent_loop = self._create_agent_loop(config, BuiltinAgentName.DEFAULT)
         loaded_session_id = metadata.get("session_id", agent_loop.session_id)
         agent_loop.session_id = loaded_session_id
         agent_loop.parent_session_id = metadata.get("parent_session_id")

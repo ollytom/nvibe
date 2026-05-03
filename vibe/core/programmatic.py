@@ -9,7 +9,6 @@ from vibe import __version__
 from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents.models import BuiltinAgentName
 from vibe.core.config import VibeConfig
-from vibe.core.hooks.models import HookConfigResult
 from vibe.core.logger import logger
 from vibe.core.output_formatters import create_formatter
 from vibe.core.types import AssistantEvent, LLMMessage, OutputFormat, Role
@@ -36,7 +35,6 @@ def run_programmatic(
     agent_name: str = BuiltinAgentName.AUTO_APPROVE,
     client_metadata: ClientMetadata = _DEFAULT_CLIENT_METADATA,
     headless: bool = False,
-    hook_config_result: HookConfigResult | None = None,
 ) -> str | None:
     formatter = create_formatter(output_format)
 
@@ -54,7 +52,6 @@ def run_programmatic(
             "client_name": client_metadata.name,
             "client_version": client_metadata.version,
         },
-        hook_config_result=hook_config_result,
     )
     logger.info("USER: %s", prompt)
 

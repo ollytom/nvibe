@@ -23,7 +23,7 @@ agents, prompts, logs, and session data live here.
 ```
 ~/.vibe/
   config.toml          # Main configuration file (TOML format)
-  hooks.toml           # User-level hook definitions (experimental)
+
   .env                 # API keys and credentials (dotenv format)
   vibehistory          # Command history
   trusted_folders.toml # Trust database for project folders
@@ -41,7 +41,7 @@ agents, prompts, logs, and session data live here.
 
 When in a trusted folder, Vibe also looks for project-local configuration:
 - `.vibe/config.toml` - Project-specific config (overrides user config)
-- `.vibe/hooks.toml` - Project-specific hooks (requires trusted folder)
+
 - `.vibe/skills/` - Project-specific skills
 - `.vibe/tools/` - Project-specific tools
 - `.vibe/agents/` - Project-specific agents
@@ -210,94 +210,6 @@ enabled = true
 save_dir = ""                     # Defaults to ~/.vibe/logs/session
 session_prefix = "session"
 ```
-
-### Hooks (Experimental)
-
-Hooks let users run shell commands automatically at specific points during a
-session. The feature is **experimental** and must be enabled first:
-
-```toml
-# In config.toml
-enable_experimental_hooks = true
-```
-
-Or via the environment variable `VIBE_ENABLE_EXPERIMENTAL_HOOKS=true`.
-
-#### Hook Configuration Files
-
-Hooks are defined in `hooks.toml` files (separate from `config.toml`):
-
-1. **User-level**: `~/.vibe/hooks.toml` (always loaded when hooks are enabled)
-2. **Project-level**: `<project>/.vibe/hooks.toml` (only loaded if the folder is trusted)
-
-Both files are merged; if a hook name appears in both, the first one wins and
-a warning is shown for the duplicate.
-
-#### hooks.toml Format
-
-```toml
-[[hooks]]
-name = "lint"                     # Unique hook name (required)
-type = "post_agent_turn"          # Hook type (required, see below)
-command = "eslint --quiet ."      # Shell command to execute (required)
-timeout = 30.0                    # Seconds before the hook is killed (default: 30)
-description = "Run ESLint"        # Optional human-readable description
-
-[[hooks]]
-name = "typecheck"
-type = "post_agent_turn"
-command = "npx tsc --noEmit"
-timeout = 60.0
-description = "Run TypeScript type checking"
-```
-
-#### Available Hook Types
-
-| Type | When it runs |
-|---|---|
-| `post_agent_turn` | After the agent finishes a turn (no more pending tool calls) |
-
-#### How Hooks Execute
-
-- Each hook runs as a **shell subprocess** in the current working directory.
-- The hook receives a **JSON object on stdin** with context:
-  ```json
-  {
-    "session_id": "...",
-    "transcript_path": "/path/to/session/log.jsonl",
-    "cwd": "/current/working/dir",
-    "hook_event_name": "post_agent_turn"
-  }
-  ```
-- If the hook exceeds its `timeout`, the entire process tree is killed.
-
-#### Exit Code Semantics
-
-| Exit Code | Behavior |
-|---|---|
-| `0` | Success — hook output is shown as an info message |
-| `2` | **Retry** — hook's stdout is injected as a new user message, and the agent gets another turn to fix the issue (max 3 retries per hook in a row per user message) |
-| Any other | Warning — hook output is shown as a warning message |
-
-The retry mechanism (exit code 2) is powerful: the hook can tell the agent what
-went wrong, and the agent will attempt to fix it automatically. For example, a
-linter hook can output the lint errors, and the agent will try to resolve them.
-
-#### Example: Post-Turn Linting Hook
-
-```toml
-# .vibe/hooks.toml
-[[hooks]]
-name = "ruff-check"
-type = "post_agent_turn"
-command = "uv run ruff check --quiet ."
-timeout = 30.0
-description = "Check for lint errors after each turn"
-```
-
-If the linter finds issues and exits with code 2, its stdout (the error
-messages) is fed back to the agent as a user message, prompting the agent to
-fix the problems. After 3 failed retries the hook stops retrying.
 
 ### Pattern Matching
 

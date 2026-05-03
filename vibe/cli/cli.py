@@ -18,7 +18,6 @@ from vibe.core.config import (
     load_dotenv_values,
 )
 from vibe.core.config.harness_files import get_harness_files_manager
-from vibe.core.hooks.config import load_hooks_from_fs
 from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
 from vibe.core.programmatic import run_programmatic
@@ -178,7 +177,6 @@ def run_cli(args: argparse.Namespace) -> None:
         initial_agent_name = get_initial_agent_name(args)
         is_interactive = args.prompt is None
         config = load_config_or_exit(interactive=is_interactive)
-        hook_config_result = load_hooks_from_fs(config)
 
         if args.enabled_tools:
             config.enabled_tools = args.enabled_tools
@@ -209,7 +207,6 @@ def run_cli(args: argparse.Namespace) -> None:
                     previous_messages=loaded_session[0] if loaded_session else None,
                     agent_name=initial_agent_name,
                     headless=True,
-                    hook_config_result=hook_config_result,
                 )
                 if final_response:
                     print(final_response)
@@ -226,7 +223,6 @@ def run_cli(args: argparse.Namespace) -> None:
                 agent_name=initial_agent_name,
                 enable_streaming=True,
                 defer_heavy_init=True,
-                hook_config_result=hook_config_result,
             )
 
             if loaded_session:
