@@ -12,7 +12,6 @@ from vibe.acp.tools.builtins.read_file import ReadFile
 from vibe.acp.tools.builtins.skill import Skill
 from vibe.acp.tools.builtins.task import Task
 from vibe.acp.tools.builtins.web_fetch import WebFetch
-from vibe.acp.tools.builtins.web_search import WebSearch
 from vibe.acp.tools.builtins.write_file import WriteFile
 from vibe.acp.tools.session_update import (
     tool_call_session_update,
@@ -23,11 +22,6 @@ from vibe.core.tools.builtins.read_file import ReadFileArgs, ReadFileResult
 from vibe.core.tools.builtins.skill import SkillArgs, SkillResult
 from vibe.core.tools.builtins.task import TaskArgs, TaskResult
 from vibe.core.tools.builtins.webfetch import WebFetchArgs, WebFetchResult
-from vibe.core.tools.builtins.websearch import (
-    WebSearchArgs,
-    WebSearchResult,
-    WebSearchSource,
-)
 from vibe.core.tools.builtins.write_file import WriteFileArgs, WriteFileResult
 from vibe.core.types import ToolCallEvent, ToolResultEvent
 
@@ -134,37 +128,6 @@ class TestReadFileFieldMeta:
         assert update.locations is not None
         loc = update.locations[0]
         assert loc.field_meta == {"type": "file_range", "offset": 10, "limit": 3}
-
-
-class TestWebSearchFieldMeta:
-    def test_call_meta_contains_query(self) -> None:
-        event = _call_event(
-            "web_search", WebSearch, WebSearchArgs(query="python async")
-        )
-        update = tool_call_session_update(event)
-
-        assert isinstance(update, ToolCallStart)
-        assert update.field_meta == {"tool_name": "web_search", "query": "python async"}
-        assert update.kind == "search"
-
-    def test_result_locations_are_source_urls_with_titles(self) -> None:
-        result = WebSearchResult(
-            answer="found it",
-            sources=[
-                WebSearchSource(title="Docs", url="https://docs.python.org"),
-                WebSearchSource(title="Blog", url="https://blog.example.com"),
-            ],
-        )
-        event = _result_event("web_search", WebSearch, result)
-        update = tool_result_session_update(event)
-
-        assert isinstance(update, ToolCallProgress)
-        assert update.locations is not None
-        assert len(update.locations) == 2
-        assert update.locations[0].path == "https://docs.python.org"
-        assert update.locations[0].field_meta == {"type": "url", "title": "Docs"}
-        assert update.locations[1].path == "https://blog.example.com"
-        assert update.locations[1].field_meta == {"type": "url", "title": "Blog"}
 
 
 class TestWebFetchFieldMeta:

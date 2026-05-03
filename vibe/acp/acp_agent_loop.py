@@ -334,7 +334,7 @@ class VibeAcpAgentLoop(AcpAgent):
         )
 
     def _get_acp_tool_overrides(self) -> list[Path]:
-        overrides = ["todo", "grep", "web_fetch", "web_search", "skill", "task"]
+        overrides = ["todo", "grep", "web_fetch", "skill", "task"]
 
         if self.client_capabilities:
             if self.client_capabilities.terminal:
