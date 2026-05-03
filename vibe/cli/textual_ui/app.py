@@ -26,14 +26,6 @@ from textual.widgets import Static
 
 from vibe import __version__ as CORE_VERSION
 from vibe.cli.commands import CommandAvailabilityContext, CommandRegistry
-from vibe.cli.plan_offer.adapters.http_whoami_gateway import HttpWhoAmIGateway
-from vibe.cli.plan_offer.decide_plan_offer import (
-    PlanInfo,
-    decide_plan_offer,
-    plan_title,
-    resolve_api_key_for_plan,
-)
-from vibe.cli.plan_offer.ports.whoami_gateway import WhoAmIGateway, WhoAmIPlanType
 from vibe.cli.textual_ui.handlers.event_handler import EventHandler
 from vibe.cli.textual_ui.notifications import (
     NotificationContext,
@@ -299,14 +291,12 @@ class VibeApp(App):  # noqa: PLR0904
         update_notifier: UpdateGateway | None = None,
         update_cache_repository: UpdateCacheRepository | None = None,
         current_version: str = CORE_VERSION,
-        plan_offer_gateway: WhoAmIGateway | None = None,
         terminal_notifier: NotificationPort | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self.scroll_sensitivity_y = 1.0
         self.agent_loop = agent_loop
-        self._plan_info: PlanInfo | None = None
         self._terminal_notifier = terminal_notifier or TextualNotificationAdapter(
             self,
             get_enabled=lambda: self.config.enable_notifications,
@@ -338,7 +328,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._update_notifier = update_notifier
         self._update_cache_repository = update_cache_repository
         self._current_version = current_version
-        self._plan_offer_gateway = plan_offer_gateway
         opts = startup or StartupOptions()
         self._initial_prompt = opts.initial_prompt
         self._show_resume_picker = opts.show_resume_picker
@@ -367,8 +356,7 @@ class VibeApp(App):  # noqa: PLR0904
 
     def _get_command_availability_context(self) -> CommandAvailabilityContext:
         return CommandAvailabilityContext(
-            is_active_model_mistral=self.config.is_active_model_mistral(),
-            plan_info=self._plan_info,
+            is_active_model_mistral=self.config.is_active_model_mistral()
         )
 
     def _build_command_registry(self) -> CommandRegistry:
@@ -446,7 +434,6 @@ class VibeApp(App):  # noqa: PLR0904
 
         chat_input_container = self.query_one(ChatInputContainer)
         chat_input_container.focus_input()
-        await self._resolve_plan()
         await self._show_dangerous_directory_warning()
         await self._resume_history_from_messages()
         self._schedule_update_notification()
@@ -1112,13 +1099,6 @@ class VibeApp(App):  # noqa: PLR0904
         return str(e)
 
     def _rate_limit_message(self) -> str:
-        upgrade_to_pro = self._plan_info and (
-            self._plan_info.plan_type
-            in {WhoAmIPlanType.API, WhoAmIPlanType.UNAUTHORIZED}
-            or self._plan_info.is_free_mistral_code_plan()
-        )
-        if upgrade_to_pro:
-            return "Rate limits exceeded. Please wait a moment before trying again, or upgrade to Pro for higher rate limits and uninterrupted access."
         return "Rate limits exceeded. Please wait a moment before trying again."
 
     def _context_too_long_message(self) -> str:
@@ -1388,7 +1368,6 @@ class VibeApp(App):  # noqa: PLR0904
             base_config = VibeConfig.load()
 
             await self.agent_loop.reload_with_initial_messages(base_config=base_config)
-            await self._resolve_plan()
 
             if self._banner:
                 self._banner.set_state(
@@ -1398,7 +1377,6 @@ class VibeApp(App):  # noqa: PLR0904
                     connectors_count=_compute_connectors_count(
                         base_config, self.agent_loop.connector_registry
                     ),
-                    plan_description=plan_title(self._plan_info),
                 )
             await self._mount_and_scroll(
                 UserCommandMessage(
@@ -2046,7 +2024,6 @@ class VibeApp(App):  # noqa: PLR0904
                 connectors_count=_compute_connectors_count(
                     self.config, self.agent_loop.connector_registry
                 ),
-                plan_description=plan_title(self._plan_info),
             )
 
     def _update_profile_widgets(self, profile: AgentProfile) -> None:
@@ -2153,28 +2130,6 @@ class VibeApp(App):  # noqa: PLR0904
                 f"⚠ WARNING: {reason}\n\nRunning in this location is not recommended."
             )
             await self._mount_and_scroll(WarningMessage(warning, show_border=False))
-
-    async def _resolve_plan(self) -> None:
-        if self._plan_offer_gateway is None:
-            self._plan_info = None
-            self._refresh_command_registry()
-            return
-
-        try:
-            if not self.config.is_active_model_mistral():
-                self._plan_info = None
-                return
-
-            provider = self.config.get_active_provider()
-            api_key = resolve_api_key_for_plan(provider)
-            self._plan_info = await decide_plan_offer(api_key, self._plan_offer_gateway)
-        except Exception as exc:
-            logger.warning(
-                "Plan-offer check failed (%s).", type(exc).__name__, exc_info=True
-            )
-            self._plan_info = None
-        finally:
-            self._refresh_command_registry()
 
     async def _mount_and_scroll(
         self, widget: Widget, after: Widget | None = None
@@ -2306,7 +2261,6 @@ def run_textual_ui(
 
     update_notifier = PyPIUpdateGateway(project_name="mistral-vibe")
     update_cache_repository = FileSystemUpdateCacheRepository()
-    plan_offer_gateway = HttpWhoAmIGateway()
 
     with stderr_guard():
         app = VibeApp(
@@ -2314,7 +2268,6 @@ def run_textual_ui(
             startup=startup,
             update_notifier=update_notifier,
             update_cache_repository=update_cache_repository,
-            plan_offer_gateway=plan_offer_gateway,
         )
         session_id = app.run()
 

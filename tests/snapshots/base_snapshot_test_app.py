@@ -3,10 +3,8 @@ from __future__ import annotations
 from rich.style import Style
 from textual.widgets.text_area import TextAreaTheme
 
-from tests.cli.plan_offer.adapters.fake_whoami_gateway import FakeWhoAmIGateway
 from tests.conftest import build_test_agent_loop, build_test_vibe_config
 from tests.stubs.fake_backend import FakeBackend
-from vibe.cli.plan_offer.ports.whoami_gateway import WhoAmIPlanType, WhoAmIResponse
 from vibe.cli.textual_ui.app import VibeApp
 from vibe.cli.textual_ui.widgets.chat_input import ChatTextArea
 from vibe.core.agents.models import BuiltinAgentName
@@ -41,20 +39,7 @@ class BaseSnapshotTestApp(VibeApp):
             backend=backend or FakeBackend(),
         )
 
-        plan_offer_gateway = kwargs.pop(
-            "plan_offer_gateway",
-            FakeWhoAmIGateway(
-                WhoAmIResponse(
-                    plan_type=WhoAmIPlanType.CHAT,
-                    plan_name="INDIVIDUAL",
-                    prompt_switching_to_pro_plan=False,
-                )
-            ),
-        )
-
-        super().__init__(
-            agent_loop=agent_loop, plan_offer_gateway=plan_offer_gateway, **kwargs
-        )
+        super().__init__(agent_loop=agent_loop, **kwargs)
 
     async def on_mount(self) -> None:
         await super().on_mount()

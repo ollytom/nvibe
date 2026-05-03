@@ -4,15 +4,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 import sys
 
-from vibe.cli.plan_offer.decide_plan_offer import PlanInfo
-
 ALT_KEY = "⌥" if sys.platform == "darwin" else "Alt"
 
 
 @dataclass(frozen=True)
 class CommandAvailabilityContext:
     is_active_model_mistral: bool = False
-    plan_info: PlanInfo | None = None
 
 
 CommandAvailability = Callable[[CommandAvailabilityContext], bool]
