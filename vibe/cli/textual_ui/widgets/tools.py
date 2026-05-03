@@ -34,7 +34,7 @@ class ToolCallMessage(StatusMessage):
         with Vertical(classes="tool-call-container"):
             with Horizontal():
                 self._indicator_widget = NonSelectableStatic(
-                    self._spinner.current_frame(), classes="status-indicator-icon"
+                    "...", classes="status-indicator-icon"
                 )
                 yield self._indicator_widget
                 self._text_widget = NoMarkupStatic("", classes="status-indicator-text")

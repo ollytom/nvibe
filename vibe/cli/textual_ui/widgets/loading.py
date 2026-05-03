@@ -13,7 +13,6 @@ from textual.widgets import Static
 
 from vibe.cli.textual_ui.constants import MistralColors
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from vibe.cli.textual_ui.widgets.spinner import SpinnerMixin, SpinnerType
 
 DEFAULT_LOADING_STATUS = "Generating"
 
@@ -30,7 +29,7 @@ def _format_elapsed(seconds: int) -> str:
     return f"{hours}h{mins}m{secs}s"
 
 
-class LoadingWidget(SpinnerMixin, Static):
+class LoadingWidget(Static):
     TARGET_COLORS = (
         MistralColors.YELLOW,
         MistralColors.ORANGE_LIGHT,
@@ -38,7 +37,6 @@ class LoadingWidget(SpinnerMixin, Static):
         MistralColors.ORANGE_DARK,
         MistralColors.RED,
     )
-    SPINNER_TYPE = SpinnerType.SNAKE
 
     EASTER_EGGS: ClassVar[list[str]] = [
         "Eating a chocolatine",
@@ -75,7 +73,6 @@ class LoadingWidget(SpinnerMixin, Static):
 
     def __init__(self, status: str | None = None, *, show_hint: bool = True) -> None:
         super().__init__(classes="loading-widget")
-        self.init_spinner()
         self.status = status or self._get_default_status()
         self.current_color_index = 0
         self._color_direction = 1
@@ -129,7 +126,7 @@ class LoadingWidget(SpinnerMixin, Static):
     def compose(self) -> ComposeResult:
         with Horizontal(classes="loading-container"):
             self._indicator_widget = Static(
-                self._spinner.current_frame(), classes="loading-indicator"
+                "...", classes="loading-indicator"
             )
             yield self._indicator_widget
 
@@ -144,15 +141,6 @@ class LoadingWidget(SpinnerMixin, Static):
 
     def on_mount(self) -> None:
         self.start_time = time()
-        self._update_animation()
-        self.start_spinner_timer()
-
-    def on_resize(self) -> None:
-        self.refresh_spinner()
-
-    def _update_spinner_frame(self) -> None:
-        if not self._is_spinning:
-            return
         self._update_animation()
 
     def _next_color_index(self) -> int:
@@ -179,9 +167,8 @@ class LoadingWidget(SpinnerMixin, Static):
         total_elements = 1 + len(self.status) + 1
 
         if self._indicator_widget:
-            spinner_char = self._spinner.next_frame()
             color = self._get_color_for_position(0)
-            self._indicator_widget.update(f"[{color}]{spinner_char}[/]")
+            self._indicator_widget.update(f"[{color}]...[/]")
 
         if self._status_widget:
             self._status_widget.update(self._build_status_text())

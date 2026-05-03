@@ -2,32 +2,17 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Static
 
 from vibe.cli.commands import CommandRegistry
 from vibe.cli.history_manager import HistoryManager
 from vibe.cli.textual_ui.widgets.chat_input.text_area import ChatTextArea, InputMode
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from vibe.cli.textual_ui.widgets.spinner import SpinnerMixin, SpinnerType
-
-
-class _PromptSpinner(SpinnerMixin, Static):
-    SPINNER_TYPE: ClassVar[SpinnerType] = SpinnerType.BRAILLE
-
-    def __init__(self) -> None:
-        self._indicator_widget: Static | None = None
-        self.init_spinner()
-        super().__init__(self._spinner.current_frame(), id="prompt-spinner")
-
-    def on_mount(self) -> None:
-        self._indicator_widget = self
-        self.start_spinner_timer()
 
 
 class ChatInputBody(Widget):
@@ -172,16 +157,9 @@ class ChatInputBody(Widget):
     @switching_mode.setter
     def switching_mode(self, value: bool) -> None:
         self._switching_mode = value
-        if value:
-            if self.prompt_widget:
-                self.prompt_widget.display = False
-            if not self.query(_PromptSpinner):
-                self.query_one(Horizontal).mount(_PromptSpinner(), before=0)
-        else:
-            for spinner in self.query(_PromptSpinner):
-                spinner.remove()
-            if self.prompt_widget:
-                self.prompt_widget.display = True
+        if self.prompt_widget:
+            self.prompt_widget.display = not value
+            if not value:
                 self._update_prompt()
 
     @property

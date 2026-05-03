@@ -12,7 +12,6 @@ from textual.widgets._markdown import MarkdownStream
 
 from vibe.cli.textual_ui.ansi_markdown import AnsiMarkdown as Markdown
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from vibe.cli.textual_ui.widgets.spinner import SpinnerMixin, SpinnerType
 
 
 class NonSelectableStatic(NoMarkupStatic):
@@ -157,28 +156,23 @@ class AssistantMessage(StreamingMessageBase):
         yield markdown
 
 
-class ReasoningMessage(SpinnerMixin, StreamingMessageBase):
-    SPINNER_TYPE = SpinnerType.PULSE
-    SPINNING_TEXT = "Thinking"
-    COMPLETED_TEXT = "Thought"
-
+class ReasoningMessage(StreamingMessageBase):
     def __init__(self, content: str, collapsed: bool = True) -> None:
         super().__init__(content)
         self.add_class("reasoning-message")
         self.collapsed = collapsed
         self._indicator_widget: Static | None = None
         self._triangle_widget: Static | None = None
-        self.init_spinner()
 
     def compose(self) -> ComposeResult:
         with Vertical(classes="reasoning-message-wrapper"):
             with Horizontal(classes="reasoning-message-header"):
                 self._indicator_widget = NonSelectableStatic(
-                    self._spinner.current_frame(), classes="reasoning-indicator"
+                    "...", classes="reasoning-indicator"
                 )
                 yield self._indicator_widget
                 self._status_text_widget = NoMarkupStatic(
-                    self.SPINNING_TEXT, classes="reasoning-collapsed-text"
+                    "Thinking", classes="reasoning-collapsed-text"
                 )
                 yield self._status_text_widget
                 self._triangle_widget = NonSelectableStatic(
@@ -189,12 +183,6 @@ class ReasoningMessage(SpinnerMixin, StreamingMessageBase):
             markdown.display = not self.collapsed
             self._markdown = markdown
             yield markdown
-
-    def on_mount(self) -> None:
-        self.start_spinner_timer()
-
-    def on_resize(self) -> None:
-        self.refresh_spinner()
 
     async def on_click(self) -> None:
         await self._toggle_collapsed()
