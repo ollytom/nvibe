@@ -91,11 +91,7 @@ class CommandRegistry:
                 description="Display agent statistics",
                 handler="_show_status",
             ),
-            "proxy-setup": Command(
-                aliases=frozenset(["/proxy-setup"]),
-                description="Configure proxy and SSL certificate settings",
-                handler="_show_proxy_setup",
-            ),
+
             "resume": Command(
                 aliases=frozenset(["/resume", "/continue"]),
                 description="Browse and resume past sessions",

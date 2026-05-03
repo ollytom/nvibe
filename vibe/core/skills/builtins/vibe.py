@@ -270,7 +270,6 @@ Custom agents are TOML files in `~/.vibe/agents/NAME.toml`.
 - `/resume` (or `/continue`) - Browse and resume past sessions
 - `/rewind` - Rewind to a previous message
 - `/terminal-setup` - Configure Shift+Enter for newlines
-- `/proxy-setup` - Configure proxy and SSL certificate settings
 - `/exit` - Exit the application
 
 ## Skills System

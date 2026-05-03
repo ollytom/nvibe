@@ -64,7 +64,6 @@ from vibe.cli.textual_ui.widgets.messages import (
 from vibe.cli.textual_ui.widgets.model_picker import ModelPickerApp
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.cli.textual_ui.widgets.path_display import PathDisplay
-from vibe.cli.textual_ui.widgets.proxy_setup_app import ProxySetupApp
 from vibe.cli.textual_ui.widgets.question_app import QuestionApp
 from vibe.cli.textual_ui.widgets.rewind_app import RewindApp
 from vibe.cli.textual_ui.widgets.session_picker import SessionPickerApp
@@ -156,7 +155,7 @@ class BottomApp(StrEnum):
     Input = auto()
     MCP = auto()
     ModelPicker = auto()
-    ProxySetup = auto()
+
     Question = auto()
     ThinkingPicker = auto()
     Rewind = auto()
@@ -673,23 +672,7 @@ class VibeApp(App):  # noqa: PLR0904
         await self._switch_to_input_app()
         await self._show_mcp(cmd_args=message.connector_name)
 
-    async def on_proxy_setup_app_proxy_setup_closed(
-        self, message: ProxySetupApp.ProxySetupClosed
-    ) -> None:
-        if message.error:
-            await self._mount_and_scroll(
-                ErrorMessage(f"Failed to save proxy settings: {message.error}")
-            )
-        elif message.saved:
-            await self._mount_and_scroll(
-                UserCommandMessage(
-                    "Proxy settings saved. Restart the CLI for changes to take effect."
-                )
-            )
-        else:
-            await self._mount_and_scroll(UserCommandMessage("Proxy setup cancelled."))
 
-        await self._switch_to_input_app()
 
     async def on_compact_message_completed(
         self, message: CompactMessage.Completed
@@ -1216,10 +1199,7 @@ class VibeApp(App):  # noqa: PLR0904
             return
         await self._switch_to_thinking_picker_app()
 
-    async def _show_proxy_setup(self, **kwargs: Any) -> None:
-        if self._current_bottom_app == BottomApp.ProxySetup:
-            return
-        await self._switch_to_proxy_setup_app()
+
 
     async def _show_session_picker(self, **kwargs: Any) -> None:
         cwd = str(Path.cwd())
@@ -1521,12 +1501,7 @@ class VibeApp(App):  # noqa: PLR0904
             )
         )
 
-    async def _switch_to_proxy_setup_app(self) -> None:
-        if self._current_bottom_app == BottomApp.ProxySetup:
-            return
 
-        await self._mount_and_scroll(UserCommandMessage("Proxy setup opened..."))
-        await self._switch_from_input(ProxySetupApp())
 
     async def _switch_to_approval_app(
         self,
@@ -1576,8 +1551,7 @@ class VibeApp(App):  # noqa: PLR0904
                     self.query_one(ModelPickerApp).focus()
                 case BottomApp.ThinkingPicker:
                     self.query_one(ThinkingPickerApp).focus()
-                case BottomApp.ProxySetup:
-                    self.query_one(ProxySetupApp).focus()
+
                 case BottomApp.Approval:
                     self.query_one(ApprovalApp).focus()
                 case BottomApp.Question:
@@ -1854,7 +1828,7 @@ class VibeApp(App):  # noqa: PLR0904
         self.run_worker(self._interrupt_agent_loop(), exclusive=False)
 
     def _handle_bottom_app_close_escape(
-        self, widget_type: type[MCPApp] | type[ProxySetupApp] | type[ConnectorAuthApp]
+        self, widget_type: type[MCPApp] | type[ConnectorAuthApp]
     ) -> None:
         try:
             self.query_one(widget_type).action_close()
@@ -1869,8 +1843,7 @@ class VibeApp(App):  # noqa: PLR0904
             self._handle_bottom_app_close_escape(MCPApp)
         elif self._current_bottom_app == BottomApp.ConnectorAuth:
             self._handle_bottom_app_close_escape(ConnectorAuthApp)
-        elif self._current_bottom_app == BottomApp.ProxySetup:
-            self._handle_bottom_app_close_escape(ProxySetupApp)
+
         elif self._current_bottom_app == BottomApp.Approval:
             self._handle_approval_app_escape()
         elif self._current_bottom_app == BottomApp.Question:
