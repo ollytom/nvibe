@@ -84,7 +84,6 @@ required-version = ">=0.8.0"
 dev = [
     "debugpy>=1.8.19",
     "pre-commit>=4.2.0",
-    "pyinstrument>=5.1.2",
     "pyright>=1.1.403",
     "pytest>=8.3.5",
     "pytest-asyncio>=1.2.0",
