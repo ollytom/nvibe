@@ -9,10 +9,6 @@ import pytest
 import tomli_w
 
 from tests.stubs.fake_backend import FakeBackend
-from tests.update_notifier.adapters.fake_update_cache_repository import (
-    FakeUpdateCacheRepository,
-)
-from tests.update_notifier.adapters.fake_update_gateway import FakeUpdateGateway
 from vibe.cli.textual_ui.app import CORE_VERSION, StartupOptions, VibeApp
 from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents.models import BuiltinAgentName
@@ -149,11 +145,6 @@ def _mock_platform(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _mock_update_commands(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("vibe.cli.update_notifier.update.UPDATE_COMMANDS", ["true"])
-
-
-@pytest.fixture(autouse=True)
 def _disable_feedback_bar(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "vibe.cli.textual_ui.widgets.feedback_bar_manager.FEEDBACK_PROBABILITY", 0
@@ -229,16 +220,6 @@ def build_test_vibe_app(
 
     resolved_agent_loop = agent_loop or build_test_agent_loop(config=app_config)
 
-    update_notifier = kwargs.pop("update_notifier", None)
-    resolved_update_notifier = (
-        FakeUpdateGateway() if update_notifier is None else update_notifier
-    )
-    update_cache_repository = kwargs.pop("update_cache_repository", None)
-    resolved_update_cache_repository = (
-        FakeUpdateCacheRepository()
-        if update_cache_repository is None
-        else update_cache_repository
-    )
     current_version = kwargs.pop("current_version", None)
     resolved_current_version = (
         CORE_VERSION if current_version is None else current_version
@@ -248,7 +229,5 @@ def build_test_vibe_app(
         agent_loop=resolved_agent_loop,
         startup=StartupOptions(initial_prompt=kwargs.pop("initial_prompt", None)),
         current_version=resolved_current_version,
-        update_notifier=resolved_update_notifier,
-        update_cache_repository=resolved_update_cache_repository,
         **kwargs,
     )

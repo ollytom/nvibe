@@ -82,21 +82,11 @@ from vibe.cli.textual_ui.windowing import (
     should_resume_history,
     sync_backfill_state,
 )
-from vibe.cli.update_notifier import (
-    FileSystemUpdateCacheRepository,
-    PyPIUpdateGateway,
-    UpdateCacheRepository,
-    UpdateError,
-    UpdateGateway,
-    get_update_if_available,
-)
-from vibe.cli.update_notifier.update import do_update
 from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents import AgentProfile
 from vibe.core.autocompletion.path_prompt_adapter import render_path_prompt
 from vibe.core.config import VibeConfig
 from vibe.core.log_reader import LogReader
-from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
 from vibe.core.rewind import RewindError
 from vibe.core.session.resume_sessions import (
@@ -287,8 +277,6 @@ class VibeApp(App):  # noqa: PLR0904
         self,
         agent_loop: AgentLoop,
         startup: StartupOptions | None = None,
-        update_notifier: UpdateGateway | None = None,
-        update_cache_repository: UpdateCacheRepository | None = None,
         current_version: str = CORE_VERSION,
         terminal_notifier: NotificationPort | None = None,
         **kwargs: Any,
@@ -324,8 +312,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._history_widget_indices: WeakKeyDictionary[Widget, int] = (
             WeakKeyDictionary()
         )
-        self._update_notifier = update_notifier
-        self._update_cache_repository = update_cache_repository
         self._current_version = current_version
         opts = startup or StartupOptions()
         self._initial_prompt = opts.initial_prompt
@@ -435,7 +421,6 @@ class VibeApp(App):  # noqa: PLR0904
         chat_input_container.focus_input()
         await self._show_dangerous_directory_warning()
         await self._resume_history_from_messages()
-        self._schedule_update_notification()
 
         self.call_after_refresh(self._refresh_banner)
         self.run_worker(self._watch_init_completion(), exclusive=False)
@@ -2165,56 +2150,6 @@ class VibeApp(App):  # noqa: PLR0904
             messages_area, visible=has_backfill, remaining=self._windowing.remaining
         )
 
-    def _schedule_update_notification(self) -> None:
-        if self._update_notifier is None or not self.config.enable_update_checks:
-            return
-
-        asyncio.create_task(self._check_update(), name="version-update-check")
-
-    async def _check_update(self) -> None:
-        try:
-            if self._update_notifier is None or self._update_cache_repository is None:
-                return
-
-            update_availability = await get_update_if_available(
-                update_notifier=self._update_notifier,
-                current_version=self._current_version,
-                update_cache_repository=self._update_cache_repository,
-            )
-        except UpdateError as error:
-            self.notify(
-                error.message,
-                title="Update check failed",
-                severity="warning",
-                timeout=10,
-            )
-            return
-        except Exception as exc:
-            logger.debug("Version update check failed", exc_info=exc)
-            return
-
-        if update_availability is None or not update_availability.should_notify:
-            return
-
-        update_message_prefix = (
-            f"{self._current_version} => {update_availability.latest_version}"
-        )
-
-        if self.config.enable_auto_update and await do_update():
-            self.notify(
-                f"{update_message_prefix}\nVibe was updated successfully. Please restart to use the new version.",
-                title="Update successful",
-                severity="information",
-                timeout=float("inf"),
-            )
-            return
-
-        message = f"{update_message_prefix}\nPlease update mistral-vibe with your package manager"
-
-        self.notify(
-            message, title="Update available", severity="information", timeout=10
-        )
-
     def on_app_blur(self, event: AppBlur) -> None:
         self._terminal_notifier.on_blur()
         if self._chat_input_container and self._chat_input_container.input_widget:
@@ -2245,16 +2180,8 @@ def run_textual_ui(
 ) -> None:
     from vibe.cli.stderr_guard import stderr_guard
 
-    update_notifier = PyPIUpdateGateway(project_name="mistral-vibe")
-    update_cache_repository = FileSystemUpdateCacheRepository()
-
     with stderr_guard():
-        app = VibeApp(
-            agent_loop=agent_loop,
-            startup=startup,
-            update_notifier=update_notifier,
-            update_cache_repository=update_cache_repository,
-        )
+        app = VibeApp(agent_loop=agent_loop, startup=startup)
         session_id = app.run()
 
     print_session_resume_message(session_id, agent_loop.stats)
