@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
 import httpx
 
-from vibe.core.llm.backend.anthropic import AnthropicAdapter
 from vibe.core.llm.backend.base import APIAdapter, PreparedRequest
 from vibe.core.llm.backend.openai_responses import OpenAIResponsesAdapter
 from vibe.core.llm.backend.reasoning_adapter import ReasoningAdapter
@@ -167,7 +166,6 @@ class OpenAIAdapter(APIAdapter):
 
 _ADAPTERS: dict[str, APIAdapter] = {
     "openai": OpenAIAdapter(),
-    "anthropic": AnthropicAdapter(),
     "reasoning": ReasoningAdapter(),
 }
 
