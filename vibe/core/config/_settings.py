@@ -198,9 +198,6 @@ class ProviderConfig(BaseModel):
         )
 
 
-
-
-
 def _default_alias_to_name(data: Any) -> Any:
     if isinstance(data, dict):
         if "alias" not in data or data["alias"] is None:

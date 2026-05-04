@@ -36,10 +36,7 @@ class TestBannerInitialState:
         skill_manager = Mock(spec=SkillManager)
         skill_manager.custom_skills_count = 0
 
-        banner = Banner(
-            config=_make_mock_config(),
-            skill_manager=skill_manager,
-        )
+        banner = Banner(config=_make_mock_config(), skill_manager=skill_manager)
 
         assert banner._initial_state.active_model == "test-model[off]"
         assert banner._initial_state.models_count == 1
@@ -50,8 +47,7 @@ class TestBannerInitialState:
         skill_manager.custom_skills_count = 0
 
         banner = Banner(
-            config=_make_mock_config(thinking="max"),
-            skill_manager=skill_manager,
+            config=_make_mock_config(thinking="max"), skill_manager=skill_manager
         )
 
         assert banner._initial_state.active_model == "test-model[max]"
@@ -60,14 +56,9 @@ class TestBannerInitialState:
         skill_manager = Mock(spec=SkillManager)
         skill_manager.custom_skills_count = 0
 
-        banner = Banner(
-            config=_make_mock_config(),
-            skill_manager=skill_manager,
-        )
+        banner = Banner(config=_make_mock_config(), skill_manager=skill_manager)
 
-        banner.state = BannerState(
-            models_count=2, skills_count=5
-        )
+        banner.state = BannerState(models_count=2, skills_count=5)
         result = banner._format_meta_counts()
         assert "2 models" in result
         assert "5 skills" in result

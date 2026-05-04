@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Static
 
-from vibe.cli.textual_ui.widgets.messages import ExpandingBorder, NonSelectableStatic
+from vibe.cli.textual_ui.widgets.messages import NonSelectableStatic
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.cli.textual_ui.widgets.status_message import StatusMessage
 from vibe.cli.textual_ui.widgets.tool_widgets import get_result_widget
@@ -113,7 +113,6 @@ class ToolResultMessage(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="tool-result-container"):
-            yield ExpandingBorder(classes="tool-result-border")
             self._content_container = Vertical(classes="tool-result-content")
             yield self._content_container
 

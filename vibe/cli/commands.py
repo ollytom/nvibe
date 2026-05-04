@@ -74,7 +74,6 @@ class CommandRegistry:
                 description="Show path to current interaction log file",
                 handler="_show_log_path",
             ),
-
             "compact": Command(
                 aliases=frozenset(["/compact"]),
                 description="Compact conversation history by summarizing. Optionally pass instructions to guide the summary",
@@ -91,7 +90,6 @@ class CommandRegistry:
                 description="Display agent statistics",
                 handler="_show_status",
             ),
-
             "resume": Command(
                 aliases=frozenset(["/resume", "/continue"]),
                 description="Browse and resume past sessions",

@@ -65,10 +65,7 @@ class ToolManager:
     should have its own ToolManager instance.
     """
 
-    def __init__(
-        self,
-        config_getter: Callable[[], VibeConfig],
-    ) -> None:
+    def __init__(self, config_getter: Callable[[], VibeConfig]) -> None:
         self._config_getter = config_getter
         self._instances: dict[str, BaseTool] = {}
         self._search_paths: list[Path] = self._compute_search_paths(self._config)

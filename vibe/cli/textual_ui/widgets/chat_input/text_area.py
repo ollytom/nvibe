@@ -75,12 +75,6 @@ class ChatTextArea(TextArea):
         if has_focus and not self.has_focus:
             self.call_after_refresh(self.focus)
 
-    def on_click(self, event: events.Click) -> None:
-        self._mark_cursor_moved_if_needed()
-
-    def action_insert_newline(self) -> None:
-        self.insert("\n")
-
     def action_open_external_editor(self) -> None:
         editor = ExternalEditor()
         current_text = self.get_full_text()
@@ -151,27 +145,8 @@ class ChatTextArea(TextArea):
         self.post_message(self.HistoryNext())
         return True
 
-    class FeedbackKeyPressed(Message):
-        def __init__(self, rating: int) -> None:
-            self.rating = rating
-            super().__init__()
-
-    class NonFeedbackKeyPressed(Message):
-        pass
-
-    feedback_active: bool = False
-
     async def _on_key(self, event: events.Key) -> None:  # noqa: PLR0911
         self._mark_cursor_moved_if_needed()
-
-        if self.feedback_active:
-            if event.character in {"1", "2", "3"}:
-                event.prevent_default()
-                event.stop()
-                self.post_message(self.FeedbackKeyPressed(int(event.character)))
-                return
-            if event.character is not None:
-                self.post_message(self.NonFeedbackKeyPressed())
 
         manager = self._completion_manager
         if manager:

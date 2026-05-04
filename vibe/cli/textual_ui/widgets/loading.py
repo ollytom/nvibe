@@ -69,9 +69,7 @@ class LoadingWidget(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="loading-container"):
-            self._indicator_widget = Static(
-                "...", classes="loading-indicator"
-            )
+            self._indicator_widget = Static("...", classes="loading-indicator")
             yield self._indicator_widget
 
             self._status_widget = Static("", classes="loading-status")

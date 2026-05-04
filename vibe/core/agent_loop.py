@@ -193,9 +193,7 @@ class AgentLoop:
             initial_agent=agent_name,
             allow_subagent=is_subagent,
         )
-        self.tool_manager = ToolManager(
-            lambda: self.config,
-        )
+        self.tool_manager = ToolManager(lambda: self.config)
         self.skill_manager = SkillManager(lambda: self.config)
         self.message_observer = message_observer
         self._max_turns = max_turns
@@ -381,8 +379,6 @@ class AgentLoop:
             self.set_tool_permission(
                 tool_name, ToolPermission.ALWAYS, save_permanently=save_permanently
             )
-
-
 
     @requires_init
     async def refresh_system_prompt(self) -> None:
@@ -1307,9 +1303,7 @@ class AgentLoop:
         if max_price is not None:
             self._max_price = max_price
 
-        self.tool_manager = ToolManager(
-            lambda: self.config,
-        )
+        self.tool_manager = ToolManager(lambda: self.config)
         self.skill_manager = SkillManager(lambda: self.config)
 
         new_system_prompt = get_universal_system_prompt(

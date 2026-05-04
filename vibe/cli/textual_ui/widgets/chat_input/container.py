@@ -68,10 +68,7 @@ class ChatInputContainer(Vertical):
 
         self._completion_manager = MultiCompletionManager([
             SlashCommandController(CommandCompleter(self._get_slash_entries), self),
-            PathCompletionController(
-                PathCompleter(),
-                self,
-            ),
+            PathCompletionController(PathCompleter(), self),
         ])
         self._body: ChatInputBody | None = None
 

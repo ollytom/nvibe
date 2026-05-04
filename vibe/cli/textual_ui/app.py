@@ -37,12 +37,9 @@ from vibe.cli.textual_ui.session_exit import print_session_resume_message
 from vibe.cli.textual_ui.widgets.approval_app import ApprovalApp
 from vibe.cli.textual_ui.widgets.banner.banner import Banner
 from vibe.cli.textual_ui.widgets.chat_input import ChatInputContainer
-from vibe.cli.textual_ui.widgets.chat_input.text_area import ChatTextArea
 from vibe.cli.textual_ui.widgets.compact import CompactMessage
 from vibe.cli.textual_ui.widgets.config_app import ConfigApp
 from vibe.cli.textual_ui.widgets.context_progress import ContextProgress, TokenState
-from vibe.cli.textual_ui.widgets.feedback_bar import FeedbackBar
-from vibe.cli.textual_ui.widgets.feedback_bar_manager import FeedbackBarManager
 from vibe.cli.textual_ui.widgets.load_more import HistoryLoadMoreRequested
 from vibe.cli.textual_ui.widgets.loading import (
     DEFAULT_LOADING_STATUS,
@@ -60,8 +57,6 @@ from vibe.cli.textual_ui.widgets.messages import (
     WarningMessage,
 )
 from vibe.cli.textual_ui.widgets.model_picker import ModelPickerApp
-from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from vibe.cli.textual_ui.widgets.path_display import PathDisplay
 from vibe.cli.textual_ui.widgets.question_app import QuestionApp
 from vibe.cli.textual_ui.widgets.rewind_app import RewindApp
 from vibe.cli.textual_ui.widgets.session_picker import SessionPickerApp
@@ -245,7 +240,6 @@ class VibeApp(App):  # noqa: PLR0904
         Binding(
             "shift+down", "scroll_chat_down", "Scroll Down", show=False, priority=True
         ),
-
         Binding("alt+up", "rewind_prev", "Rewind Previous", show=False, priority=True),
         Binding("ctrl+p", "rewind_prev", "Rewind Previous", show=False, priority=True),
         Binding("alt+down", "rewind_next", "Rewind Next", show=False, priority=True),
@@ -314,8 +308,6 @@ class VibeApp(App):  # noqa: PLR0904
     def config(self) -> VibeConfig:
         return self.agent_loop.config
 
-
-
     def _get_command_availability_context(self) -> CommandAvailabilityContext:
         return CommandAvailabilityContext(
             is_active_model_mistral=self.config.is_active_model_mistral()
@@ -332,15 +324,13 @@ class VibeApp(App):  # noqa: PLR0904
     def compose(self) -> ComposeResult:
         with ChatScroll(id="chat"):
             self._banner = Banner(
-                config=self.config,
-                skill_manager=self.agent_loop.skill_manager,
+                config=self.config, skill_manager=self.agent_loop.skill_manager
             )
             yield self._banner
             yield VerticalGroup(id="messages")
 
         with Horizontal(id="loading-area"):
             yield Static(id="loading-area-content")
-            yield FeedbackBar()
 
         with Static(id="bottom-app-container"):
             yield ChatInputContainer(
@@ -353,8 +343,6 @@ class VibeApp(App):  # noqa: PLR0904
             )
 
         with Horizontal(id="bottom-bar"):
-            yield PathDisplay(self.config.displayed_workdir or Path.cwd())
-            yield NoMarkupStatic(id="spacer")
             yield ContextProgress()
 
     async def on_mount(self) -> None:
@@ -364,8 +352,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._cached_messages_area = self.query_one("#messages")
         self._cached_chat = self.query_one("#chat", ChatScroll)
         self._cached_loading_area = self.query_one("#loading-area-content")
-        self._feedback_bar = self.query_one(FeedbackBar)
-        self._feedback_bar_manager = FeedbackBarManager()
 
         self.event_handler = EventHandler(
             mount_callback=self._mount_and_scroll,
@@ -505,21 +491,6 @@ class VibeApp(App):  # noqa: PLR0904
         if self._pending_question and not self._pending_question.done():
             result = AskUserQuestionResult(answers=[], cancelled=True)
             self._pending_question.set_result(result)
-
-    def on_chat_text_area_feedback_key_pressed(
-        self, message: ChatTextArea.FeedbackKeyPressed
-    ) -> None:
-        self._feedback_bar.handle_feedback_key(message.rating)
-
-    def on_chat_text_area_non_feedback_key_pressed(
-        self, message: ChatTextArea.NonFeedbackKeyPressed
-    ) -> None:
-        self._feedback_bar.hide()
-
-    def on_feedback_bar_feedback_given(
-        self, message: FeedbackBar.FeedbackGiven
-    ) -> None:
-        pass
 
     async def _remove_loading_widget(self) -> None:
         if self._loading_widget and self._loading_widget.parent:
@@ -789,9 +760,6 @@ class VibeApp(App):  # noqa: PLR0904
         user_message = UserMessage(message, message_index=message_index)
 
         await self._mount_and_scroll(user_message)
-        if self._feedback_bar_manager.should_show(self.agent_loop):
-            self._feedback_bar.show()
-            self._feedback_bar_manager.record_feedback_asked()
 
         if not self._agent_running:
             await self._remove_loading_widget()
@@ -1047,16 +1015,19 @@ class VibeApp(App):  # noqa: PLR0904
 
     async def _show_status(self, **kwargs: Any) -> None:
         stats = self.agent_loop.stats
-        status_text = f"""## Agent Statistics
+        status_text = f"""Steps: {stats.steps:,}
 
-- **Steps**: {stats.steps:,}
-- **Session Prompt Tokens**: {stats.session_prompt_tokens:,}
-- **Session Completion Tokens**: {stats.session_completion_tokens:,}
-- **Session Total LLM Tokens**: {stats.session_total_llm_tokens:,}
-- **Last Turn Tokens**: {stats.last_turn_total_tokens:,}
-- **Cost**: ${stats.session_cost:.4f}
+Session Prompt Tokens: {stats.session_prompt_tokens:,}
+
+Session Completion Tokens: {stats.session_completion_tokens:,}
+
+Session Total LLM Tokens: {stats.session_total_llm_tokens:,}
+
+Last Turn Tokens: {stats.last_turn_total_tokens:,}
+
+Cost: ${stats.session_cost:.4f}
 """
-        await self._mount_and_scroll(UserCommandMessage(status_text))
+        await self._mount_and_scroll(UserMessage(status_text))
 
     async def _show_config(self, **kwargs: Any) -> None:
         """Switch to the configuration app in the bottom panel."""
@@ -1075,8 +1046,6 @@ class VibeApp(App):  # noqa: PLR0904
         if self._current_bottom_app == BottomApp.ThinkingPicker:
             return
         await self._switch_to_thinking_picker_app()
-
-
 
     async def _show_session_picker(self, **kwargs: Any) -> None:
         cwd = str(Path.cwd())
@@ -1193,10 +1162,7 @@ class VibeApp(App):  # noqa: PLR0904
             await self.agent_loop.reload_with_initial_messages(base_config=base_config)
 
             if self._banner:
-                self._banner.set_state(
-                    base_config,
-                    self.agent_loop.skill_manager,
-                )
+                self._banner.set_state(base_config, self.agent_loop.skill_manager)
             await self._mount_and_scroll(
                 UserCommandMessage(
                     "Configuration reloaded (includes agent instructions and skills)."
@@ -1335,8 +1301,6 @@ class VibeApp(App):  # noqa: PLR0904
             self._chat_input_container.display = False
             self._chat_input_container.disabled = True
 
-        self._feedback_bar.hide()
-
         self._current_bottom_app = BottomApp[type(widget).__name__.removesuffix("App")]
         await bottom_container.mount(widget)
 
@@ -1373,8 +1337,6 @@ class VibeApp(App):  # noqa: PLR0904
                 thinking_levels=THINKING_LEVELS, current_thinking=current_thinking
             )
         )
-
-
 
     async def _switch_to_approval_app(
         self,
@@ -1811,10 +1773,7 @@ class VibeApp(App):  # noqa: PLR0904
 
     def _refresh_banner(self) -> None:
         if self._banner:
-            self._banner.set_state(
-                self.config,
-                self.agent_loop.skill_manager,
-            )
+            self._banner.set_state(self.config, self.agent_loop.skill_manager)
 
     def _update_profile_widgets(self, profile: AgentProfile) -> None:
         if self._chat_input_container:
@@ -1854,8 +1813,6 @@ class VibeApp(App):  # noqa: PLR0904
             )
 
         self.call_after_refresh(schedule_switch)
-
-
 
     def _get_chat_input(self) -> ChatInputContainer | None:
         input_widgets = self.query(ChatInputContainer)

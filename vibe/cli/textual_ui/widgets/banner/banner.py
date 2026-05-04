@@ -30,17 +30,12 @@ class Banner(Static):
     state = reactive(BannerState(), init=False)
 
     def __init__(
-        self,
-        config: VibeConfig,
-        skill_manager: SkillManager,
-        **kwargs: Any,
+        self, config: VibeConfig, skill_manager: SkillManager, **kwargs: Any
     ) -> None:
         super().__init__(**kwargs)
         self.can_focus = False
         self._initial_state = self._build_state(
-            config=config,
-            skill_manager=skill_manager,
-            plan_description=None,
+            config=config, skill_manager=skill_manager, plan_description=None
         )
 
     def compose(self) -> ComposeResult:
@@ -80,9 +75,7 @@ class Banner(Static):
         skill_manager: SkillManager,
         plan_description: str | None = None,
     ) -> None:
-        self.state = self._build_state(
-            config, skill_manager, plan_description
-        )
+        self.state = self._build_state(config, skill_manager, plan_description)
 
     @staticmethod
     def _build_state(

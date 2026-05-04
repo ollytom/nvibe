@@ -108,7 +108,6 @@ TextArea > .text-area--cursor {
     background: transparent;
     border: solid ansi_bright_black;
     border-title-align: right;
-    border-title-color: ansi_bright_black;
     padding: 0 1;
 
     &.border-warning {
@@ -136,8 +135,7 @@ TextArea > .text-area--cursor {
     height: auto;
 }
 
-#prompt,
-#prompt-spinner {
+#prompt {
     width: auto;
     background: transparent;
     color: $mistral_orange;
@@ -941,22 +939,6 @@ StatusMessage {
     }
 }
 
-ExpandingBorder {
-    width: auto;
-    height: 100%;
-    content-align: left bottom;
-}
-
-PathDisplay,
-ContextProgress {
-    width: auto;
-    height: auto;
-    background: transparent;
-    padding: 0;
-    margin: 0;
-    color: ansi_bright_black;
-}
-
 #banner-container {
     align: left middle;
     padding: 0 1 0 0;
@@ -1159,11 +1141,6 @@ ContextProgress {
     margin-top: 1;
 }
 
-FeedbackBar {
-    width: auto;
-    height: auto;
-    margin-left: 1;
-}
 
 .user-message.rewind-selected {
     .user-message-content {
@@ -1210,11 +1187,6 @@ FeedbackBar {
     color: ansi_bright_black;
 }
 
-#feedback-text {
-    width: auto;
-    height: auto;
-    color: ansi_default;
-}
 
 .hook-system-message {
     height: auto;

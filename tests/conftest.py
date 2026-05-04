@@ -144,13 +144,6 @@ def _mock_platform(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SHELL", "/bin/sh")
 
 
-@pytest.fixture(autouse=True)
-def _disable_feedback_bar(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "vibe.cli.textual_ui.widgets.feedback_bar_manager.FEEDBACK_PROBABILITY", 0
-    )
-
-
 @pytest.fixture
 def vibe_app() -> VibeApp:
     return build_test_vibe_app()

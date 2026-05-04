@@ -27,15 +27,6 @@ class NonSelectableStatic(NoMarkupStatic):
         return None
 
 
-class ExpandingBorder(NonSelectableStatic):
-    def render(self) -> str:
-        height = self.size.height
-        return "\n".join(["⎢"] * (height - 1) + ["⎣"])
-
-    def on_resize(self) -> None:
-        self.refresh()
-
-
 class UserMessage(Static):
     def __init__(
         self, content: str, pending: bool = False, message_index: int | None = None
@@ -220,7 +211,6 @@ class UserCommandMessage(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="user-command-container"):
-            yield ExpandingBorder(classes="user-command-border")
             with Vertical(classes="user-command-content"):
                 yield Markdown(self._content)
 
@@ -232,7 +222,6 @@ class InterruptMessage(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="interrupt-container"):
-            yield ExpandingBorder(classes="interrupt-border")
             yield NoMarkupStatic(
                 "Interrupted · What should Vibe do instead?",
                 classes="interrupt-content",
@@ -255,7 +244,6 @@ class BashOutputMessage(Static):
             yield NonSelectableStatic("$ ", classes=f"bash-prompt {status_class}")
             yield NoMarkupStatic(self._command, classes="bash-command")
         with Horizontal(classes="bash-output-container"):
-            yield ExpandingBorder(classes="bash-output-border")
             yield NoMarkupStatic(self._output, classes="bash-output")
 
 
@@ -269,7 +257,6 @@ class ErrorMessage(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="error-container"):
-            yield ExpandingBorder(classes="error-border")
             self._content_widget = NoMarkupStatic(
                 f"Error: {self._error}", classes="error-content"
             )
@@ -288,6 +275,4 @@ class WarningMessage(Static):
 
     def compose(self) -> ComposeResult:
         with Horizontal(classes="warning-container"):
-            if self._show_border:
-                yield ExpandingBorder(classes="warning-border")
             yield NoMarkupStatic(self._message, classes="warning-content")

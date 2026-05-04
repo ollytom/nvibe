@@ -21,10 +21,7 @@ class _RebuildTask:
 
 
 class FileIndexer:
-    def __init__(
-        self,
-        mass_change_threshold: int = 200,
-    ) -> None:
+    def __init__(self, mass_change_threshold: int = 200) -> None:
         self._lock = RLock()  # guards _store snapshot access.
         self._stats = FileIndexStats()
         self._ignore_rules = IgnoreRules()
