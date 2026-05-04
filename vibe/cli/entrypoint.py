@@ -5,8 +5,6 @@ import os
 from pathlib import Path
 import sys
 
-from rich import print as rprint
-
 from vibe import __version__
 from vibe.core.agents.models import BuiltinAgentName
 from vibe.core.config.harness_files import init_harness_files_manager
@@ -128,7 +126,7 @@ def check_and_resolve_trusted_folder(cwd: Path) -> None:
     except (KeyboardInterrupt, EOFError, TrustDialogQuitException):
         sys.exit(0)
     except Exception as e:
-        rprint(f"[yellow]Error showing trust dialog: {e}[/]")
+        print("show trust dialog:", e)
         return
 
     if is_folder_trusted is True:
@@ -143,21 +141,14 @@ def main() -> None:
     if args.workdir:
         workdir = args.workdir.expanduser().resolve()
         if not workdir.is_dir():
-            rprint(
-                f"[red]Error: --workdir does not exist or is not a directory: {workdir}[/]"
-            )
+            print(f"stat {workdir}: not a directory")(
             sys.exit(1)
         os.chdir(workdir)
 
     try:
         cwd = Path.cwd()
     except FileNotFoundError:
-        rprint(
-            "[red]Error: Current working directory no longer exists.[/]\n"
-            "[yellow]The directory you started vibe from has been deleted. "
-            "Please change to an existing directory and try again, "
-            "or use --workdir to specify a working directory.[/]"
-        )
+        print("current working directory: no such file or directory")
         sys.exit(1)
 
     if args.trust:
