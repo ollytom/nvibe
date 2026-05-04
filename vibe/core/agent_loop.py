@@ -8,9 +8,7 @@ from enum import StrEnum, auto
 from functools import wraps
 from http import HTTPStatus
 import inspect
-import os
 import threading
-from threading import Thread
 import time
 from typing import Any, Literal
 from uuid import uuid4
@@ -60,10 +58,7 @@ from vibe.core.tools.base import (
     ToolPermission,
     ToolPermissionError,
 )
-from vibe.core.tools.connectors import ConnectorRegistry, connectors_enabled
 from vibe.core.tools.manager import ToolManager
-from vibe.core.tools.mcp import MCPRegistry
-from vibe.core.tools.mcp_sampling import MCPSamplingHandler
 from vibe.core.tools.permissions import (
     ApprovedRule,
     PermissionContext,
@@ -99,7 +94,6 @@ from vibe.core.utils import (
     TOOL_ERROR_TAG,
     VIBE_STOP_EVENT_TAG,
     CancellationReason,
-    get_server_url_from_api_base,
     get_user_agent,
     get_user_cancellation_message,
     is_user_cancellation_event,
@@ -194,8 +188,6 @@ class AgentLoop:
         self._init_start_time = time.monotonic()
         self._init_duration_ms: int | None = None
 
-        self.mcp_registry = MCPRegistry()
-        self.connector_registry = self._create_connector_registry()
         self.agent_manager = AgentManager(
             lambda: self._base_config,
             initial_agent=agent_name,
@@ -203,9 +195,6 @@ class AgentLoop:
         )
         self.tool_manager = ToolManager(
             lambda: self.config,
-            mcp_registry=self.mcp_registry,
-            connector_registry=self.connector_registry,
-            defer_mcp=defer_heavy_init,
         )
         self.skill_manager = SkillManager(lambda: self.config)
         self.message_observer = message_observer
@@ -217,11 +206,6 @@ class AgentLoop:
 
         self.backend_factory = lambda: backend or self._select_backend()
         self.backend = self.backend_factory()
-        self._sampling_handler = MCPSamplingHandler(
-            backend_getter=lambda: self.backend,
-            config_getter=lambda: self.config,
-            extra_headers_getter=self._get_extra_headers,
-        )
 
         self.enable_streaming = enable_streaming
         self.middleware_pipeline = MiddlewarePipeline()
@@ -295,13 +279,12 @@ class AgentLoop:
         return thread is not None and not thread.is_alive()
 
     def _complete_init(self) -> None:
-        """Run deferred heavy I/O: MCP and connector discovery.
+        """Run deferred heavy I/O.
 
         Intended to be called from a background thread when
         ``defer_heavy_init=True`` was passed to ``__init__``.
         """
         try:
-            self.tool_manager.integrate_all(raise_on_mcp_failure=True)
             system_prompt = get_universal_system_prompt(
                 self.tool_manager,
                 self.config,
@@ -399,21 +382,7 @@ class AgentLoop:
                 tool_name, ToolPermission.ALWAYS, save_permanently=save_permanently
             )
 
-    def _create_connector_registry(self) -> ConnectorRegistry | None:
-        if not connectors_enabled():
-            return None
 
-        provider = self._base_config.get_mistral_provider()
-        if provider is None:
-            return None
-
-        api_key_env = provider.api_key_env_var or "MISTRAL_API_KEY"
-        api_key = os.getenv(api_key_env, "")
-        if not api_key:
-            return None
-
-        server_url = get_server_url_from_api_base(provider.api_base)
-        return ConnectorRegistry(api_key=api_key, server_url=server_url)
 
     @requires_init
     async def refresh_system_prompt(self) -> None:
@@ -757,7 +726,6 @@ class AgentLoop:
                     entrypoint_metadata=self.entrypoint_metadata or {},
                     approval_callback=self.approval_callback,
                     user_input_callback=self.user_input_callback,
-                    sampling_callback=self._sampling_handler,
                     plan_file_path=self._plan_session.plan_file_path,
                     switch_agent_callback=self.switch_agent,
                     skill_manager=self.skill_manager,
@@ -1341,8 +1309,6 @@ class AgentLoop:
 
         self.tool_manager = ToolManager(
             lambda: self.config,
-            mcp_registry=self.mcp_registry,
-            connector_registry=self.connector_registry,
         )
         self.skill_manager = SkillManager(lambda: self.config)
 

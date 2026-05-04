@@ -12,7 +12,6 @@ from vibe import __version__
 from vibe.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from vibe.core.config import VibeConfig
 from vibe.core.skills.manager import SkillManager
-from vibe.core.tools.mcp.registry import MCPRegistry
 
 
 def _pluralize(count: int, singular: str) -> str:
@@ -23,8 +22,6 @@ def _pluralize(count: int, singular: str) -> str:
 class BannerState:
     active_model: str = ""
     models_count: int = 0
-    mcp_servers_count: int = 0
-    connectors_count: int = 0
     skills_count: int = 0
     plan_description: str | None = None
 
@@ -36,8 +33,6 @@ class Banner(Static):
         self,
         config: VibeConfig,
         skill_manager: SkillManager,
-        mcp_registry: MCPRegistry,
-        connectors_count: int = 0,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -45,8 +40,6 @@ class Banner(Static):
         self._initial_state = self._build_state(
             config=config,
             skill_manager=skill_manager,
-            mcp_registry=mcp_registry,
-            connectors_count=connectors_count,
             plan_description=None,
         )
 
@@ -85,40 +78,28 @@ class Banner(Static):
         self,
         config: VibeConfig,
         skill_manager: SkillManager,
-        mcp_registry: MCPRegistry,
-        connectors_count: int = 0,
         plan_description: str | None = None,
     ) -> None:
         self.state = self._build_state(
-            config, skill_manager, mcp_registry, connectors_count, plan_description
+            config, skill_manager, plan_description
         )
 
     @staticmethod
     def _build_state(
         config: VibeConfig,
         skill_manager: SkillManager,
-        mcp_registry: MCPRegistry,
-        connectors_count: int = 0,
         plan_description: str | None = None,
     ) -> BannerState:
-        enabled_servers = [s for s in config.mcp_servers if not s.disabled]
-        mcp_count = mcp_registry.count_loaded(enabled_servers)
-
         active_model = config.get_active_model()
         return BannerState(
             active_model=f"{active_model.alias}[{active_model.thinking}]",
             models_count=len(config.models),
-            mcp_servers_count=mcp_count,
-            connectors_count=connectors_count,
             skills_count=skill_manager.custom_skills_count,
             plan_description=plan_description,
         )
 
     def _format_meta_counts(self) -> str:
         parts = [_pluralize(self.state.models_count, "model")]
-        if self.state.connectors_count > 0:
-            parts.append(_pluralize(self.state.connectors_count, "connector"))
-        parts.append(_pluralize(self.state.mcp_servers_count, "MCP server"))
         parts.append(_pluralize(self.state.skills_count, "skill"))
         return " · ".join(parts)
 

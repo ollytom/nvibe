@@ -97,14 +97,6 @@ class CommandRegistry:
                 description="Browse and resume past sessions",
                 handler="_show_session_picker",
             ),
-            "mcp": Command(
-                aliases=frozenset(["/mcp", "/connectors"]),
-                description=(
-                    "Display available MCP servers and connectors. "
-                    "Pass a name to list its tools"
-                ),
-                handler="_show_mcp",
-            ),
             "rewind": Command(
                 aliases=frozenset(["/rewind"]),
                 description="Rewind to a previous message",

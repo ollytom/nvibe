@@ -9,7 +9,6 @@ class TestCommandRegistry:
         assert registry.get_command_name("/help") == "help"
         assert registry.get_command_name("/config") == "config"
         assert registry.get_command_name("/model") == "model"
-        assert registry.get_command_name("/connectors") == "mcp"
         assert registry.get_command_name("/clear") == "clear"
         assert registry.get_command_name("/exit") == "exit"
 
@@ -71,13 +70,3 @@ class TestCommandRegistry:
         registry = CommandRegistry()
         result = registry.parse_command("/help extra")
         assert result == ("help", registry.commands["help"], "extra")
-
-    def test_parse_command_keeps_args_for_argument_commands(self) -> None:
-        registry = CommandRegistry()
-        result = registry.parse_command("/mcp filesystem")
-        assert result == ("mcp", registry.commands["mcp"], "filesystem")
-
-    def test_parse_command_maps_connector_alias_to_mcp(self) -> None:
-        registry = CommandRegistry()
-        result = registry.parse_command("/connectors filesystem")
-        assert result == ("mcp", registry.commands["mcp"], "filesystem")

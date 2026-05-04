@@ -32,7 +32,6 @@ dependencies = [
     "charset-normalizer>=3.4.4",
     "httpx>=0.28.1",
     "markdownify>=1.2.2",
-    "mcp>=1.14.0",
     "mistralai==2.3.2",
     "packaging>=24.1",
     "pexpect>=4.9.0",

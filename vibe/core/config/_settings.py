@@ -3,10 +3,8 @@ from __future__ import annotations
 from collections.abc import MutableMapping
 import os
 from pathlib import Path
-import re
-import shlex
 import tomllib
-from typing import Annotated, Any, Literal, get_args
+from typing import Any, Literal, get_args
 
 from dotenv import dotenv_values
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -200,133 +198,7 @@ class ProviderConfig(BaseModel):
         )
 
 
-class _MCPBase(BaseModel):
-    name: str = Field(description="Short alias used to prefix tool names")
-    prompt: str | None = Field(
-        default=None, description="Optional usage hint appended to tool descriptions"
-    )
-    startup_timeout_sec: float = Field(
-        default=10.0,
-        gt=0,
-        description="Timeout in seconds for the server to start and initialize.",
-    )
-    tool_timeout_sec: float = Field(
-        default=60.0, gt=0, description="Timeout in seconds for tool execution."
-    )
-    sampling_enabled: bool = Field(
-        default=True,
-        description="Allow this MCP server to request LLM completions via sampling/createMessage.",
-    )
-    disabled: bool = Field(
-        default=False,
-        description="Disable all tools from this MCP server. Tools are still discovered but hidden.",
-    )
-    disabled_tools: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Tool names (without the server prefix) to disable from this server. "
-            "E.g. ['search', 'read'] to hide '{alias}_search' and '{alias}_read'."
-        ),
-    )
 
-    @field_validator("name", mode="after")
-    @classmethod
-    def normalize_name(cls, v: str) -> str:
-        normalized = re.sub(r"[^a-zA-Z0-9_-]", "_", v)
-        normalized = normalized.strip("_-")
-        return normalized[:256]
-
-
-class _MCPHttpFields(BaseModel):
-    url: str = Field(description="Base URL of the MCP HTTP server")
-    headers: dict[str, str] = Field(
-        default_factory=dict,
-        description=(
-            "Additional HTTP headers when using 'http' transport (e.g., Authorization or X-API-Key)."
-        ),
-    )
-    api_key_env: str = Field(
-        default="",
-        description=(
-            "Environment variable name containing an API token to send for HTTP transport."
-        ),
-    )
-    api_key_header: str = Field(
-        default="Authorization",
-        description=(
-            "HTTP header name to carry the token when 'api_key_env' is set (e.g., 'Authorization' or 'X-API-Key')."
-        ),
-    )
-    api_key_format: str = Field(
-        default="Bearer {token}",
-        description=(
-            "Format string for the header value when 'api_key_env' is set. Use '{token}' placeholder."
-        ),
-    )
-
-    def http_headers(self) -> dict[str, str]:
-        hdrs = dict(self.headers or {})
-        env_var = (self.api_key_env or "").strip()
-        if env_var and (token := os.getenv(env_var)):
-            target = (self.api_key_header or "").strip() or "Authorization"
-            if not any(h.lower() == target.lower() for h in hdrs):
-                try:
-                    value = (self.api_key_format or "{token}").format(token=token)
-                except Exception:
-                    value = token
-                hdrs[target] = value
-        return hdrs
-
-
-class MCPHttp(_MCPBase, _MCPHttpFields):
-    transport: Literal["http"]
-
-
-class MCPStreamableHttp(_MCPBase, _MCPHttpFields):
-    transport: Literal["streamable-http"]
-
-
-class MCPStdio(_MCPBase):
-    transport: Literal["stdio"]
-    command: str | list[str]
-    args: list[str] = Field(default_factory=list)
-    env: dict[str, str] = Field(
-        default_factory=dict,
-        description="Environment variables to set for the MCP server process.",
-    )
-    cwd: str | None = Field(
-        default=None, description="Working directory for the MCP server process."
-    )
-
-    def argv(self) -> list[str]:
-        base = (
-            shlex.split(self.command)
-            if isinstance(self.command, str)
-            else list(self.command or [])
-        )
-        return [*base, *self.args] if self.args else base
-
-
-MCPServer = Annotated[
-    MCPHttp | MCPStreamableHttp | MCPStdio, Field(discriminator="transport")
-]
-
-
-class ConnectorConfig(BaseModel):
-    """Per-connector settings persisted in config.toml under ``[[connectors]]``."""
-
-    name: str = Field(description="Normalized connector alias to match against.")
-    disabled: bool = Field(
-        default=False,
-        description="Disable all tools from this connector. Tools are still discovered but hidden.",
-    )
-    disabled_tools: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Tool names (without the connector prefix) to disable. "
-            "E.g. ['search'] to hide 'connector_{name}_search'."
-        ),
-    )
 
 
 def _default_alias_to_name(data: Any) -> Any:
@@ -433,14 +305,6 @@ class VibeConfig(BaseSettings):
             "Directories are shallow-searched for tool definition files, "
             "while files are loaded directly if valid."
         ),
-    )
-
-    mcp_servers: list[MCPServer] = Field(
-        default_factory=list, description="Preferred MCP server configuration entries."
-    )
-    connectors: list[ConnectorConfig] = Field(
-        default_factory=list,
-        description="Per-connector settings (disable, disabled_tools).",
     )
 
     enabled_tools: list[str] = Field(

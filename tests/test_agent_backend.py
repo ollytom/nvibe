@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from mcp.types import CreateMessageRequestParams, SamplingMessage, TextContent
 import pytest
 
 from tests.conftest import build_test_agent_loop, build_test_vibe_config
@@ -30,17 +29,6 @@ def _two_model_vibe_config(active_model: str) -> VibeConfig:
     ]
     return build_test_vibe_config(
         active_model=active_model, models=models, providers=providers
-    )
-
-
-def _make_sampling_params() -> CreateMessageRequestParams:
-    return CreateMessageRequestParams(
-        messages=[
-            SamplingMessage(role="user", content=TextContent(type="text", text="Hi"))
-        ],
-        systemPrompt=None,
-        temperature=None,
-        maxTokens=100,
     )
 
 

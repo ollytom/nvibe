@@ -40,7 +40,6 @@ from vibe.cli.textual_ui.widgets.chat_input import ChatInputContainer
 from vibe.cli.textual_ui.widgets.chat_input.text_area import ChatTextArea
 from vibe.cli.textual_ui.widgets.compact import CompactMessage
 from vibe.cli.textual_ui.widgets.config_app import ConfigApp
-from vibe.cli.textual_ui.widgets.connector_auth_app import ConnectorAuthApp
 from vibe.cli.textual_ui.widgets.context_progress import ContextProgress, TokenState
 from vibe.cli.textual_ui.widgets.feedback_bar import FeedbackBar
 from vibe.cli.textual_ui.widgets.feedback_bar_manager import FeedbackBarManager
@@ -50,7 +49,6 @@ from vibe.cli.textual_ui.widgets.loading import (
     LoadingWidget,
     paused_timer,
 )
-from vibe.cli.textual_ui.widgets.mcp_app import MCPApp, MCPSourceKind
 from vibe.cli.textual_ui.widgets.messages import (
     AssistantMessage,
     BashOutputMessage,
@@ -98,8 +96,6 @@ from vibe.core.tools.builtins.ask_user_question import (
     AskUserQuestionArgs,
     AskUserQuestionResult,
 )
-from vibe.core.tools.connectors import ConnectorRegistry, connectors_enabled
-from vibe.core.tools.mcp_settings import persist_mcp_toggle
 from vibe.core.tools.permissions import RequiredPermission
 from vibe.core.types import (
     AgentStats,
@@ -128,19 +124,6 @@ def is_progress_event(event: object) -> bool:
     )
 
 
-def _compute_connectors_count(
-    config: VibeConfig, connector_registry: ConnectorRegistry | None
-) -> int:
-    total = connector_registry.connector_count if connector_registry else 0
-    if total == 0:
-        return 0
-    disabled_names = {c.name for c in config.connectors if c.disabled}
-    known_names = set(
-        connector_registry.get_connector_names() if connector_registry else []
-    )
-    return total - len(disabled_names & known_names)
-
-
 class BottomApp(StrEnum):
     """Bottom panel app types.
 
@@ -151,9 +134,7 @@ class BottomApp(StrEnum):
 
     Approval = auto()
     Config = auto()
-    ConnectorAuth = auto()
     Input = auto()
-    MCP = auto()
     ModelPicker = auto()
 
     Question = auto()
@@ -333,9 +314,7 @@ class VibeApp(App):  # noqa: PLR0904
     def config(self) -> VibeConfig:
         return self.agent_loop.config
 
-    @property
-    def _connectors_enabled(self) -> bool:
-        return connectors_enabled() and self.agent_loop.connector_registry is not None
+
 
     def _get_command_availability_context(self) -> CommandAvailabilityContext:
         return CommandAvailabilityContext(
@@ -355,10 +334,6 @@ class VibeApp(App):  # noqa: PLR0904
             self._banner = Banner(
                 config=self.config,
                 skill_manager=self.agent_loop.skill_manager,
-                mcp_registry=self.agent_loop.mcp_registry,
-                connectors_count=_compute_connectors_count(
-                    self.config, self.agent_loop.connector_registry
-                ),
             )
             yield self._banner
             yield VerticalGroup(id="messages")
@@ -456,10 +431,6 @@ class VibeApp(App):  # noqa: PLR0904
             if self._loading_widget is init_widget:
                 await self._remove_loading_widget()
             self._refresh_banner()
-            try:
-                self.query_one(MCPApp).refresh_index()
-            except Exception:
-                pass
 
     def _process_initial_prompt(self) -> None:
         if self._initial_prompt:
@@ -634,45 +605,6 @@ class VibeApp(App):  # noqa: PLR0904
         self, _event: ThinkingPickerApp.Cancelled
     ) -> None:
         await self._switch_to_input_app()
-
-    async def on_mcpapp_mcpclosed(self, _message: MCPApp.MCPClosed) -> None:
-        await self._mount_and_scroll(UserCommandMessage("MCP servers closed."))
-        await self._switch_to_input_app()
-
-    async def on_mcpapp_mcptoggled(self, message: MCPApp.MCPToggled) -> None:
-        persist_mcp_toggle(
-            self.agent_loop.config,
-            name=message.name,
-            is_connector=message.kind == MCPSourceKind.CONNECTOR,
-            disabled=message.disabled,
-            tool_name=message.tool_name,
-        )
-        self.agent_loop.refresh_config()
-        self.query_one(MCPApp).refresh_index()
-        self._refresh_banner()
-
-    async def on_mcpapp_connector_auth_requested(
-        self, message: MCPApp.ConnectorAuthRequested
-    ) -> None:
-        await self._switch_to_input_app()
-        await self._switch_from_input(
-            ConnectorAuthApp(
-                connector_name=message.connector_name,
-                connector_registry=message.connector_registry,
-                tool_manager=message.tool_manager,
-            )
-        )
-
-    async def on_connector_auth_app_connector_auth_closed(
-        self, message: ConnectorAuthApp.ConnectorAuthClosed
-    ) -> None:
-        if message.refreshed:
-            await self.agent_loop.refresh_system_prompt()
-            self._refresh_banner()
-        await self._switch_to_input_app()
-        await self._show_mcp(cmd_args=message.connector_name)
-
-
 
     async def on_compact_message_completed(
         self, message: CompactMessage.Completed
@@ -1113,61 +1045,6 @@ class VibeApp(App):  # noqa: PLR0904
             return content
         return None
 
-    async def _refresh_mcp_browser(self) -> str:
-        await self.agent_loop.tool_manager.refresh_remote_tools_async()
-        await self.agent_loop.refresh_system_prompt()
-        self._refresh_banner()
-        return "Refreshed."
-
-    async def _show_mcp(self, cmd_args: str = "", **kwargs: Any) -> None:
-        mcp_servers = self.config.mcp_servers
-        connector_registry = (
-            self.agent_loop.connector_registry if self._connectors_enabled else None
-        )
-        has_connectors = (
-            connector_registry is not None and connector_registry.connector_count > 0
-        )
-        if not mcp_servers and not has_connectors:
-            msg = (
-                "No MCP servers or connectors configured."
-                if self._connectors_enabled
-                else "No MCP servers configured."
-            )
-            await self._mount_and_scroll(UserCommandMessage(msg))
-            return
-
-        if self._current_bottom_app == BottomApp.MCP:
-            return
-        name = cmd_args.strip()
-        connector_names = (
-            connector_registry.get_connector_names() if connector_registry else []
-        )
-        if (
-            name
-            and not any(s.name == name for s in mcp_servers)
-            and name not in connector_names
-        ):
-            all_names = [s.name for s in mcp_servers] + connector_names
-            entity = "MCP server or connector" if has_connectors else "MCP server"
-            await self._mount_and_scroll(
-                ErrorMessage(
-                    f"Unknown {entity}: {name}. Known: " + ", ".join(all_names),
-                    collapsed=self._tools_collapsed,
-                )
-            )
-            return
-        await self._mount_and_scroll(UserCommandMessage("MCP servers opened..."))
-        await self._switch_from_input(
-            MCPApp(
-                mcp_servers=mcp_servers,
-                tool_manager=self.agent_loop.tool_manager,
-                initial_server=name,
-                connector_registry=connector_registry,
-                get_connector_configs=lambda: self.agent_loop.config.connectors,
-                refresh_callback=self._refresh_mcp_browser,
-            )
-        )
-
     async def _show_status(self, **kwargs: Any) -> None:
         stats = self.agent_loop.stats
         status_text = f"""## Agent Statistics
@@ -1319,10 +1196,6 @@ class VibeApp(App):  # noqa: PLR0904
                 self._banner.set_state(
                     base_config,
                     self.agent_loop.skill_manager,
-                    self.agent_loop.mcp_registry,
-                    connectors_count=_compute_connectors_count(
-                        base_config, self.agent_loop.connector_registry
-                    ),
                 )
             await self._mount_and_scroll(
                 UserCommandMessage(
@@ -1558,10 +1431,6 @@ class VibeApp(App):  # noqa: PLR0904
                     self.query_one(QuestionApp).focus()
                 case BottomApp.SessionPicker:
                     self.query_one(SessionPickerApp).focus()
-                case BottomApp.MCP:
-                    self.query_one(MCPApp).focus()
-                case BottomApp.ConnectorAuth:
-                    self.query_one(ConnectorAuthApp).focus()
                 case BottomApp.Rewind:
                     self.query_one(RewindApp).focus()
                 case app:
@@ -1827,23 +1696,9 @@ class VibeApp(App):  # noqa: PLR0904
         pass
         self.run_worker(self._interrupt_agent_loop(), exclusive=False)
 
-    def _handle_bottom_app_close_escape(
-        self, widget_type: type[MCPApp] | type[ConnectorAuthApp]
-    ) -> None:
-        try:
-            self.query_one(widget_type).action_close()
-        except Exception:
-            pass
-        self._last_escape_time = None
-
     def _try_interrupt_bottom_app_escape(self) -> bool:
         if self._current_bottom_app == BottomApp.Config:
             self._handle_config_app_escape()
-        elif self._current_bottom_app == BottomApp.MCP:
-            self._handle_bottom_app_close_escape(MCPApp)
-        elif self._current_bottom_app == BottomApp.ConnectorAuth:
-            self._handle_bottom_app_close_escape(ConnectorAuthApp)
-
         elif self._current_bottom_app == BottomApp.Approval:
             self._handle_approval_app_escape()
         elif self._current_bottom_app == BottomApp.Question:
@@ -1959,10 +1814,6 @@ class VibeApp(App):  # noqa: PLR0904
             self._banner.set_state(
                 self.config,
                 self.agent_loop.skill_manager,
-                self.agent_loop.mcp_registry,
-                connectors_count=_compute_connectors_count(
-                    self.config, self.agent_loop.connector_registry
-                ),
             )
 
     def _update_profile_widgets(self, profile: AgentProfile) -> None:

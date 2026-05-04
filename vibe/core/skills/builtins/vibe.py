@@ -183,22 +183,6 @@ disabled_agents = ["auto-approve"]
 installed_agents = []
 ```
 
-### MCP Servers
-
-```toml
-[[mcp_servers]]
-name = "my-server"
-transport = "stdio"
-command = "npx"
-args = ["-y", "@my/mcp-server"]
-
-[[mcp_servers]]
-name = "remote-server"
-transport = "http"
-url = "https://mcp.example.com"
-api_key_env = "MCP_API_KEY"
-```
-
 ### Session Logging
 
 ```toml
@@ -212,7 +196,7 @@ session_prefix = "session"
 
 Tool, skill, and agent names support three matching modes:
 - **Exact**: `"bash"`, `"read_file"`
-- **Glob**: `"bash*"`, `"mcp_*"`
+- **Glob**: `"bash*"`, `"*_tool"`
 - **Regex**: `"re:^serena_.*$"` (full match, case-insensitive)
 
 ## CLI Parameters
@@ -266,7 +250,6 @@ Custom agents are TOML files in `~/.vibe/agents/NAME.toml`.
 - `/debug` - Toggle debug console
 - `/compact` - Compact conversation history by summarizing
 - `/status` - Display agent statistics
-- `/mcp` - Display available MCP servers (pass a server name to list its tools)
 - `/resume` (or `/continue`) - Browse and resume past sessions
 - `/rewind` - Rewind to a previous message
 - `/terminal-setup` - Configure Shift+Enter for newlines
