@@ -15,12 +15,10 @@ from typing import Any, ClassVar, assert_never, cast
 from weakref import WeakKeyDictionary
 
 from pydantic import BaseModel
-from rich import print as rprint
 from textual.app import WINDOWS, App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, VerticalGroup, VerticalScroll
 from textual.driver import Driver
-from textual.events import AppBlur, AppFocus
 from textual.widget import Widget
 from textual.widgets import Static
 
@@ -633,11 +631,6 @@ class VibeApp(App):  # noqa: PLR0904
 
     async def _handle_bash_command(self, command: str) -> None:
         if not command:
-            await self._mount_and_scroll(
-                ErrorMessage(
-                    "No command provided after '!'", collapsed=self._tools_collapsed
-                )
-            )
             return
 
         try:
@@ -1016,18 +1009,13 @@ class VibeApp(App):  # noqa: PLR0904
     async def _show_status(self, **kwargs: Any) -> None:
         stats = self.agent_loop.stats
         status_text = f"""Steps: {stats.steps:,}
-
 Session Prompt Tokens: {stats.session_prompt_tokens:,}
-
 Session Completion Tokens: {stats.session_completion_tokens:,}
-
 Session Total LLM Tokens: {stats.session_total_llm_tokens:,}
-
 Last Turn Tokens: {stats.last_turn_total_tokens:,}
-
 Cost: ${stats.session_cost:.4f}
 """
-        await self._mount_and_scroll(UserMessage(status_text))
+        await self._mount_and_scroll(Static(status_text))
 
     async def _show_config(self, **kwargs: Any) -> None:
         """Switch to the configuration app in the bottom panel."""
@@ -1186,10 +1174,6 @@ Cost: ${stats.session_cost:.4f}
             messages_area = self._cached_messages_area or self.query_one("#messages")
             await messages_area.remove_children()
 
-            await messages_area.mount(UserMessage("/clear"))
-            await self._mount_and_scroll(
-                UserCommandMessage("Conversation history cleared!")
-            )
             chat = self._cached_chat or self.query_one("#chat", ChatScroll)
             chat.scroll_home(animate=False)
 
@@ -1920,23 +1904,11 @@ Cost: ${stats.session_cost:.4f}
             messages_area, visible=has_backfill, remaining=self._windowing.remaining
         )
 
-    def on_app_blur(self, event: AppBlur) -> None:
-        self._terminal_notifier.on_blur()
-        if self._chat_input_container and self._chat_input_container.input_widget:
-            self._chat_input_container.input_widget.set_app_focus(False)
-
-    def on_app_focus(self, event: AppFocus) -> None:
-        self._terminal_notifier.on_focus()
-        if self._chat_input_container and self._chat_input_container.input_widget:
-            self._chat_input_container.input_widget.set_app_focus(True)
-
     def action_suspend_with_message(self) -> None:
         if WINDOWS or self._driver is None or not self._driver.can_suspend:
             return
         with self.suspend():
-            rprint(
-                "Mistral Vibe has been suspended. Run [bold cyan]fg[/bold cyan] to bring Mistral Vibe back."
-            )
+            print("nvibe suspended. Run fg to resume")
             os.kill(os.getpid(), signal.SIGTSTP)
 
     def _on_driver_signal_resume(self, event: Driver.SignalResume) -> None:
