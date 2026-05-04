@@ -136,7 +136,6 @@ class EventHandler:
 
     async def _handle_assistant_message(self, event: AssistantEvent) -> None:
         if self.current_streaming_reasoning is not None:
-            self.current_streaming_reasoning.stop_spinning()
             await self.current_streaming_reasoning.stop_stream()
             self.current_streaming_reasoning = None
 
@@ -179,7 +178,6 @@ class EventHandler:
 
     async def finalize_streaming(self) -> None:
         if self.current_streaming_reasoning is not None:
-            self.current_streaming_reasoning.stop_spinning()
             await self.current_streaming_reasoning.stop_stream()
             self.current_streaming_reasoning = None
         if self.current_streaming_message is not None:

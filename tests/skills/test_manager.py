@@ -8,7 +8,6 @@ import pytest
 from tests.conftest import build_test_vibe_config
 from tests.skills.conftest import create_skill
 from vibe.core.config import VibeConfig
-from vibe.core.skills.builtins import BUILTIN_SKILLS
 from vibe.core.skills.manager import SkillManager
 from vibe.core.trusted_folders import trusted_folders_manager
 
@@ -34,7 +33,7 @@ class TestSkillManagerDiscovery:
     def test_discovers_no_skills_when_directory_empty(
         self, skill_manager: SkillManager
     ) -> None:
-        assert skill_manager.available_skills == BUILTIN_SKILLS
+        assert skill_manager.available_skills == {}
 
     def test_discovers_skill_from_skill_paths(self, skills_dir: Path) -> None:
         create_skill(skills_dir, "test-skill", "A test skill")
@@ -61,7 +60,7 @@ class TestSkillManagerDiscovery:
         )
         manager = SkillManager(lambda: config)
 
-        assert len(manager.available_skills) == 3 + len(BUILTIN_SKILLS)
+        assert len(manager.available_skills) == 3
         assert "skill-one" in manager.available_skills
         assert "skill-two" in manager.available_skills
         assert "skill-three" in manager.available_skills
@@ -83,7 +82,7 @@ class TestSkillManagerDiscovery:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert "valid-skill" in skills
         assert "not-a-skill" not in skills
 
@@ -102,7 +101,7 @@ class TestSkillManagerDiscovery:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert "valid-skill" in skills
 
 
@@ -166,7 +165,7 @@ class TestSkillManagerParsing:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert "valid-skill" in skills
         assert "invalid-skill" not in skills
 
@@ -187,7 +186,7 @@ class TestSkillManagerParsing:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert "valid-skill" in skills
 
 
@@ -247,7 +246,7 @@ class TestSkillManagerSearchPaths:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 2 + len(BUILTIN_SKILLS)
+        assert len(skills) == 2
         assert skills["vibe-only"].description == "From .vibe"
         assert skills["agents-only"].description == "From .agents"
 
@@ -268,7 +267,7 @@ class TestSkillManagerSearchPaths:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert skills["shared-skill"].description == "First from .vibe"
 
     def test_discovers_from_multiple_skill_paths(self, tmp_path: Path) -> None:
@@ -289,7 +288,7 @@ class TestSkillManagerSearchPaths:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 2 + len(BUILTIN_SKILLS)
+        assert len(skills) == 2
         assert "skill-from-dir1" in skills
         assert "skill-from-dir2" in skills
 
@@ -311,7 +310,7 @@ class TestSkillManagerSearchPaths:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert skills["duplicate-skill"].description == "First version"
 
     def test_ignores_nonexistent_skill_paths(self, tmp_path: Path) -> None:
@@ -327,7 +326,7 @@ class TestSkillManagerSearchPaths:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 1 + len(BUILTIN_SKILLS)
+        assert len(skills) == 1
         assert "valid-skill" in skills
 
 
@@ -384,7 +383,7 @@ class TestSkillManagerFiltering:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 2 + len(BUILTIN_SKILLS)
+        assert len(skills) == 2
         assert "skill-a" in skills
         assert "skill-b" not in skills
         assert "skill-c" in skills
@@ -522,7 +521,7 @@ class TestSkillUserInvocable:
         manager = SkillManager(lambda: config)
 
         skills = manager.available_skills
-        assert len(skills) == 3 + len(BUILTIN_SKILLS)
+        assert len(skills) == 3
         assert skills["visible-skill"].user_invocable is True
         assert skills["hidden-skill"].user_invocable is False
         assert skills["default-skill"].user_invocable is True

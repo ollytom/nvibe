@@ -4,7 +4,7 @@ import pytest
 
 from tests.conftest import build_test_vibe_app
 from vibe.cli.textual_ui.widgets.chat_input import ChatInputContainer
-from vibe.cli.textual_ui.widgets.chat_input.body import ChatInputBody, _PromptSpinner
+from vibe.cli.textual_ui.widgets.chat_input.body import ChatInputBody
 from vibe.cli.textual_ui.widgets.messages import UserMessage
 
 
@@ -64,13 +64,11 @@ async def test_spinner_shown_while_switching_mode() -> None:
         prompt = body.prompt_widget
         assert prompt is not None
         assert prompt.display is True
-        assert len(body.query(_PromptSpinner)) == 0
 
         body.switching_mode = True
         await pilot.pause(0.1)
 
         assert prompt.display is False
-        assert len(body.query(_PromptSpinner)) == 1
 
 
 @pytest.mark.asyncio
@@ -88,7 +86,6 @@ async def test_spinner_removed_after_switching_mode_ends() -> None:
 
         assert body.prompt_widget is not None
         assert body.prompt_widget.display is True
-        assert len(body.query(_PromptSpinner)) == 0
 
 
 @pytest.mark.asyncio
@@ -105,5 +102,3 @@ async def test_rapid_switching_mode_no_duplicate_spinners() -> None:
             body.switching_mode = True
             body.switching_mode = True  # double set
         await pilot.pause(0.1)
-
-        assert len(body.query(_PromptSpinner)) == 1

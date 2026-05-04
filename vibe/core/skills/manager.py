@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from vibe.core.config.harness_files import get_harness_files_manager
 from vibe.core.logger import logger
-from vibe.core.skills.builtins import BUILTIN_SKILLS
 from vibe.core.skills.models import ParsedSkillCommand, SkillInfo, SkillMetadata
 from vibe.core.skills.parser import SkillParseError, parse_skill_markdown
 from vibe.core.utils import name_matches
@@ -72,7 +71,7 @@ class SkillManager:
         return unique
 
     def _discover_skills(self) -> dict[str, SkillInfo]:
-        skills: dict[str, SkillInfo] = {**BUILTIN_SKILLS}
+        skills: dict[str, SkillInfo] = {}
         for base in self._search_paths:
             if not base.is_dir():
                 continue
@@ -98,7 +97,7 @@ class SkillManager:
                 continue
             if (skill_info := self._try_load_skill(skill_file)) is None:
                 continue
-            if skill_info.name in BUILTIN_SKILLS:
+            if skill_info.name in {}:
                 logger.debug(
                     "Skipping skill '%s' at %s because builtin skill names are reserved",
                     skill_info.name,
@@ -146,7 +145,7 @@ class SkillManager:
 
     @property
     def custom_skills_count(self) -> int:
-        return sum(name not in BUILTIN_SKILLS for name in self.available_skills)
+        return len(self.available_skills)
 
     def get_skill(self, name: str) -> SkillInfo | None:
         return self.available_skills.get(name)

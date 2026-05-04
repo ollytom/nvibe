@@ -89,6 +89,5 @@ NEVER git push
 
 ## Autoimprovement
 
-- Suggest to add new rules to AGENTS.md based on user input or PR comments, when a change request could be generalized as a rule.
+- Suggest to add new rules to AGENTS.md based on user input or code review comments, when a change request could be generalized as a rule.
 - Suggest updates to the README.md file according to feature changes or additions
-- Keep the builtin Vibe Skill (`vibe/core/skills/builtins/vibe.py`) up-to-date. It documents the CLI's features, such as args, flags, config options and persistence, commands, built-in agents, file discovery logic.

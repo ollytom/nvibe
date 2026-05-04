@@ -55,15 +55,6 @@ class ParallelToolCallsApp(App):
                 )
             )
 
-    def freeze_spinners(self) -> None:
-        for widget in self.query(ToolCallMessage):
-            widget._is_spinning = False
-            if widget._spinner_timer:
-                widget._spinner_timer.stop()
-                widget._spinner_timer = None
-            widget._spinner.reset()
-            if widget._indicator_widget:
-                widget._indicator_widget.update(widget._spinner.current_frame())
 
     async def resolve_all_results(self) -> None:
         if self._handler is None:
@@ -89,7 +80,6 @@ def test_snapshot_parallel_tool_calls_pending(snap_compare: SnapCompare) -> None
         app = cast(ParallelToolCallsApp, pilot.app)
         await app.emit_all_tool_calls()
         await pilot.pause(0.3)
-        app.freeze_spinners()
         await pilot.pause(0.1)
 
     assert snap_compare(
