@@ -141,7 +141,7 @@ def main() -> None:
     if args.workdir:
         workdir = args.workdir.expanduser().resolve()
         if not workdir.is_dir():
-            print(f"stat {workdir}: not a directory")(
+            print(f"stat {workdir}: not a directory")
             sys.exit(1)
         os.chdir(workdir)
 

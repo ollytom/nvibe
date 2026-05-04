@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from rich import print as rprint
-
 from vibe.core.types import AgentStats
 
 
@@ -18,8 +16,6 @@ def print_session_resume_message(session_id: str | None, stats: AgentStats) -> N
     if not session_id:
         return
 
-    print()
     print(format_session_usage(stats))
-    print()
-    rprint("To continue this session, run: [bold dark_orange]vibe --continue[/]")
-    rprint(f"Or: [bold dark_orange]vibe --resume {session_id}[/]")
+    print("To continue this session, run: vibe --continue")
+    print(f"Or: vibe --resume {session_id}")
