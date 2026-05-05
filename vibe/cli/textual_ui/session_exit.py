@@ -2,20 +2,15 @@ from __future__ import annotations
 
 from vibe.core.types import AgentStats
 
+def print_session_resume_message(session_id: str | None, stats: AgentStats) -> None:
+    if not session_id:
+        return
 
-def format_session_usage(stats: AgentStats) -> str:
-    return (
+    print(
         "Total tokens used this session: "
         f"input={stats.session_prompt_tokens:,} "
         f"output={stats.session_completion_tokens:,} "
         f"(total={stats.session_total_llm_tokens:,})"
     )
-
-
-def print_session_resume_message(session_id: str | None, stats: AgentStats) -> None:
-    if not session_id:
-        return
-
-    print(format_session_usage(stats))
     print("To continue this session, run: vibe --continue")
-    print(f"Or: vibe --resume {session_id}")
+    print("Or: vibe --resume",  session_id)

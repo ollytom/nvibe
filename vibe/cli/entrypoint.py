@@ -3,16 +3,10 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
-import sys
 
 from vibe import __version__
 from vibe.core.agents.models import BuiltinAgentName
 from vibe.core.config.harness_files import init_harness_files_manager
-from vibe.core.trusted_folders import find_trustable_files, trusted_folders_manager
-from vibe.setup.trusted_folders.trust_folder_dialog import (
-    TrustDialogQuitException,
-    ask_trust_folder,
-)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -80,13 +74,6 @@ def parse_arguments() -> argparse.Namespace:
         metavar="DIR",
         help="Change to this directory before running",
     )
-    parser.add_argument(
-        "--trust",
-        action="store_true",
-        help="Trust the working directory for this invocation only (not "
-        "persisted to trusted_folders.toml). Skips the trust prompt. "
-        "Use this for non-interactive automation.",
-    )
 
     continuation_group = parser.add_mutually_exclusive_group()
     continuation_group.add_argument(
@@ -107,34 +94,6 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def check_and_resolve_trusted_folder(cwd: Path) -> None:
-    if cwd.resolve() == Path.home().resolve():
-        return
-
-    detected_files = find_trustable_files(cwd)
-
-    if not detected_files:
-        return
-
-    is_folder_trusted = trusted_folders_manager.is_trusted(cwd)
-
-    if is_folder_trusted is not None:
-        return
-
-    try:
-        is_folder_trusted = ask_trust_folder(cwd, detected_files)
-    except (KeyboardInterrupt, EOFError, TrustDialogQuitException):
-        sys.exit(0)
-    except Exception as e:
-        print("show trust dialog:", e)
-        return
-
-    if is_folder_trusted is True:
-        trusted_folders_manager.add_trusted(cwd)
-    elif is_folder_trusted is False:
-        trusted_folders_manager.add_untrusted(cwd)
-
-
 def main() -> None:
     args = parse_arguments()
 
@@ -145,18 +104,6 @@ def main() -> None:
             sys.exit(1)
         os.chdir(workdir)
 
-    try:
-        cwd = Path.cwd()
-    except FileNotFoundError:
-        print("current working directory: no such file or directory")
-        sys.exit(1)
-
-    if args.trust:
-        trusted_folders_manager.trust_for_session(cwd)
-
-    is_interactive = args.prompt is None
-    if is_interactive:
-        check_and_resolve_trusted_folder(cwd)
     init_harness_files_manager("user", "project")
 
     from vibe.cli.cli import run_cli

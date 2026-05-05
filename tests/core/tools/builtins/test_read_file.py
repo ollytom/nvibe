@@ -17,7 +17,6 @@ from vibe.core.tools.builtins.read_file import (
     ReadFileState,
     ReadFileToolConfig,
 )
-from vibe.core.trusted_folders import trusted_folders_manager
 from vibe.core.utils import VIBE_WARNING_TAG
 
 
@@ -25,10 +24,6 @@ from vibe.core.utils import VIBE_WARNING_TAG
 def _setup_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Initialize harness files manager for tests, reset after."""
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-    monkeypatch.setattr(
-        trusted_folders_manager, "find_trust_root", lambda _: tmp_path.resolve()
-    )
     reset_harness_files_manager()
     init_harness_files_manager("user", "project")
     yield

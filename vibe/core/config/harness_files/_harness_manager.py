@@ -16,7 +16,6 @@ from vibe.core.paths import (
     ConfigWalkResult,
     walk_local_config_dirs,
 )
-from vibe.core.trusted_folders import trusted_folders_manager
 from vibe.core.utils.io import read_safe
 
 FileSource = Literal["user", "project"]
@@ -33,13 +32,10 @@ class HarnessFilesManager:
 
     @property
     def trusted_workdir(self) -> Path | None:
-        """Return cwd if project source is enabled and trusted, else None."""
+        """Return cwd if project source is enabled, else None."""
         if "project" not in self.sources:
             return None
-        cwd = self._effective_cwd
-        if trusted_folders_manager.is_trusted(cwd) is not True:
-            return None
-        return cwd
+        return self._effective_cwd
 
     @property
     def config_file(self) -> Path | None:
@@ -188,19 +184,17 @@ class HarnessFilesManager:
         return self._collect_agents_md(start, cwd, stop_inclusive=False)
 
     def load_project_docs(self) -> list[tuple[Path, str]]:
-        """Walk up from cwd to the trust root, collecting AGENTS.md files.
+        """Walk up from cwd to the filesystem root, collecting AGENTS.md files.
 
         Returns ``(directory, content)`` pairs ordered outermost-first
-        (trust root first, cwd last).  Later entries take priority.
+        (root first, cwd last).  Later entries take priority.
         """
         workdir = self.trusted_workdir
         if workdir is None:
             return []
         cwd = workdir.resolve()
-        trust_root = trusted_folders_manager.find_trust_root(cwd)
-        if trust_root is None:
-            return []
-        return self._collect_agents_md(cwd, trust_root, stop_inclusive=True)
+        # Walk up to filesystem root
+        return self._collect_agents_md(cwd, Path("/"), stop_inclusive=True)
 
 
 _manager: HarnessFilesManager | None = None

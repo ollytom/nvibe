@@ -22,7 +22,6 @@ from vibe.core.logger import logger
 from vibe.core.paths import HISTORY_FILE
 from vibe.core.programmatic import run_programmatic
 from vibe.core.session.session_loader import SessionLoader
-from vibe.core.trusted_folders import find_trustable_files, trusted_folders_manager
 from vibe.core.types import LLMMessage, OutputFormat, Role
 from vibe.core.utils import ConversationLimitException
 
@@ -64,26 +63,6 @@ def load_config_or_exit(*, interactive: bool) -> VibeConfig:
     except ValueError as e:
         rprint(f"[yellow]{e}[/]")
         sys.exit(1)
-
-
-def warn_if_workdir_trust_is_unset() -> None:
-    try:
-        cwd = Path.cwd()
-    except FileNotFoundError:
-        return
-    if cwd.resolve() == Path.home().resolve():
-        return
-    if trusted_folders_manager.is_trusted(cwd) is not None:
-        return
-    detected = find_trustable_files(cwd)
-    if not detected:
-        return
-    files_str = ", ".join(detected)
-    Console(stderr=True).print(
-        f"[yellow]Warning:[/] {cwd} is not trusted; "
-        f"project configuration ({files_str}) will be ignored. "
-        "Re-run with --trust to trust this folder temporarily."
-    )
 
 
 def bootstrap_config_files() -> None:
@@ -185,7 +164,6 @@ def run_cli(args: argparse.Namespace) -> None:
 
         stdin_prompt = get_prompt_from_stdin()
         if args.prompt is not None:
-            warn_if_workdir_trust_is_unset()
             config.disabled_tools = [*config.disabled_tools, "ask_user_question"]
             programmatic_prompt = args.prompt or stdin_prompt
             if not programmatic_prompt:

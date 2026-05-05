@@ -79,23 +79,6 @@ def config_dir(
 
 
 @pytest.fixture(autouse=True)
-def _reset_trusted_folders_manager(config_dir: Path) -> None:
-    """Prevent the singleton from writing to the real ~/.vibe/trusted_folders.toml.
-
-    The module-level ``trusted_folders_manager`` captures its file path at import
-    time (before any monkeypatch), so it would otherwise target the real home
-    directory.  Redirect it to the temp config dir used by the ``config_dir``
-    fixture.
-    """
-    from vibe.core.trusted_folders import trusted_folders_manager
-
-    trusted_folders_manager._file_path = config_dir / "trusted_folders.toml"
-    trusted_folders_manager._trusted = []
-    trusted_folders_manager._untrusted = []
-    trusted_folders_manager._session_trusted = []
-
-
-@pytest.fixture(autouse=True)
 def _init_harness_files_manager():
     reset_harness_files_manager()
     init_harness_files_manager("user", "project")

@@ -20,7 +20,6 @@ from vibe.core.config.harness_files import (
     reset_harness_files_manager,
 )
 from vibe.core.paths import VIBE_HOME
-from vibe.core.trusted_folders import trusted_folders_manager
 from vibe.core.types import Backend
 
 
@@ -83,7 +82,7 @@ def _custom_model_payload(**overrides: object) -> dict[str, object]:
 
 
 class TestResolveConfigFile:
-    def test_resolves_local_config_when_exists_and_folder_is_trusted(
+    def test_resolves_local_config_when_exists(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
@@ -91,8 +90,6 @@ class TestResolveConfigFile:
         local_config_dir.mkdir()
         local_config = local_config_dir / "config.toml"
         local_config.write_text('active_model = "test"', encoding="utf-8")
-
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
 
         reset_harness_files_manager()
         init_harness_files_manager("user", "project")
@@ -105,7 +102,7 @@ class TestResolveConfigFile:
         assert resolved.is_file()
         assert resolved.read_text(encoding="utf-8") == 'active_model = "test"'
 
-    def test_resolves_global_config_when_folder_is_not_trusted(
+    def test_resolves_global_config_when_project_not_in_sources(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
@@ -115,7 +112,7 @@ class TestResolveConfigFile:
         local_config.write_text('active_model = "test"', encoding="utf-8")
 
         reset_harness_files_manager()
-        init_harness_files_manager("user", "project")
+        init_harness_files_manager("user")
         from vibe.core.config.harness_files import get_harness_files_manager
 
         mgr = get_harness_files_manager()

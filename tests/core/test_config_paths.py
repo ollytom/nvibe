@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from vibe.core.config.harness_files import HarnessFilesManager
-from vibe.core.trusted_folders import trusted_folders_manager
 
 
 class TestTrustedWorkdir:
@@ -16,19 +15,10 @@ class TestTrustedWorkdir:
         mgr = HarnessFilesManager(sources=("user",))
         assert mgr.trusted_workdir is None
 
-    def test_returns_none_when_not_trusted(
+    def test_returns_cwd_when_project_in_sources(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: False)
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.trusted_workdir is None
-
-    def test_returns_cwd_when_project_in_sources_and_trusted(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         mgr = HarnessFilesManager(sources=("user", "project"))
         assert mgr.trusted_workdir == tmp_path
 
@@ -41,28 +31,17 @@ class TestProjectToolsDirs:
         mgr = HarnessFilesManager(sources=("user",))
         assert mgr.project_tools_dirs == []
 
-    def test_returns_empty_when_not_trusted(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: False)
-        (tmp_path / ".vibe" / "tools").mkdir(parents=True)
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.project_tools_dirs == []
-
     def test_returns_empty_when_tools_dir_does_not_exist(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         mgr = HarnessFilesManager(sources=("user", "project"))
         assert mgr.project_tools_dirs == []
 
-    def test_returns_path_when_tools_dir_exists_and_trusted(
+    def test_returns_path_when_tools_dir_exists(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         tools_dir = tmp_path / ".vibe" / "tools"
         tools_dir.mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -72,7 +51,6 @@ class TestProjectToolsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe").mkdir()
         (tmp_path / ".vibe" / "tools").write_text("", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -82,7 +60,6 @@ class TestProjectToolsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe" / "tools").mkdir(parents=True)
         (tmp_path / "sub" / ".vibe" / "tools").mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -95,7 +72,6 @@ class TestProjectToolsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe" / "tools").mkdir(parents=True)
         (tmp_path / ".git" / ".vibe" / "tools").mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -110,28 +86,17 @@ class TestProjectAgentsDirs:
         mgr = HarnessFilesManager(sources=("user",))
         assert mgr.project_agents_dirs == []
 
-    def test_returns_empty_when_not_trusted(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: False)
-        (tmp_path / ".vibe" / "agents").mkdir(parents=True)
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.project_agents_dirs == []
-
     def test_returns_empty_when_agents_dir_does_not_exist(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         mgr = HarnessFilesManager(sources=("user", "project"))
         assert mgr.project_agents_dirs == []
 
-    def test_returns_path_when_agents_dir_exists_and_trusted(
+    def test_returns_path_when_agents_dir_exists(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         agents_dir = tmp_path / ".vibe" / "agents"
         agents_dir.mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -141,7 +106,6 @@ class TestProjectAgentsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe").mkdir()
         (tmp_path / ".vibe" / "agents").write_text("", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -151,7 +115,6 @@ class TestProjectAgentsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe" / "agents").mkdir(parents=True)
         (tmp_path / "sub" / "deep" / ".vibe" / "agents").mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -164,7 +127,6 @@ class TestProjectAgentsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe" / "agents").mkdir(parents=True)
         (tmp_path / "__pycache__" / ".vibe" / "agents").mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -245,39 +207,22 @@ class TestLoadProjectDocs:
         mgr = HarnessFilesManager(sources=("user",))
         assert mgr.load_project_docs() == []
 
-    def test_returns_empty_when_not_trusted(
+    def test_returns_single_doc_at_cwd(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: False)
-        (tmp_path / "AGENTS.md").write_text("# Hello", encoding="utf-8")
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.load_project_docs() == []
-
-    def test_returns_single_doc_when_trust_root_is_cwd(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-        monkeypatch.setattr(
-            trusted_folders_manager, "find_trust_root", lambda _: tmp_path.resolve()
-        )
         (tmp_path / "AGENTS.md").write_text("# Root doc", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
         docs = mgr.load_project_docs()
         assert len(docs) == 1
         assert docs[0] == (tmp_path.resolve(), "# Root doc")
 
-    def test_walks_up_to_trust_root(
+    def test_walks_up_to_filesystem_root(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         child = tmp_path / "sub" / "deep"
         child.mkdir(parents=True)
         monkeypatch.chdir(child)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-        monkeypatch.setattr(
-            trusted_folders_manager, "find_trust_root", lambda _: tmp_path.resolve()
-        )
         (tmp_path / "AGENTS.md").write_text("# Root", encoding="utf-8")
         (child / "AGENTS.md").write_text("# Child", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -292,10 +237,6 @@ class TestLoadProjectDocs:
         child = tmp_path / "sub" / "deep"
         child.mkdir(parents=True)
         monkeypatch.chdir(child)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-        monkeypatch.setattr(
-            trusted_folders_manager, "find_trust_root", lambda _: tmp_path.resolve()
-        )
         # Only root has AGENTS.md, intermediate "sub" does not
         (tmp_path / "AGENTS.md").write_text("# Root", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -303,50 +244,10 @@ class TestLoadProjectDocs:
         assert len(docs) == 1
         assert docs[0] == (tmp_path.resolve(), "# Root")
 
-    def test_stops_at_trust_root_boundary(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        trust_root = tmp_path / "root"
-        child = trust_root / "sub"
-        child.mkdir(parents=True)
-        monkeypatch.chdir(child)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-        monkeypatch.setattr(
-            trusted_folders_manager, "find_trust_root", lambda _: trust_root.resolve()
-        )
-        # Place AGENTS.md above trust root — should NOT be loaded
-        (tmp_path / "AGENTS.md").write_text("# Above root", encoding="utf-8")
-        (trust_root / "AGENTS.md").write_text("# At root", encoding="utf-8")
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        docs = mgr.load_project_docs()
-        assert len(docs) == 1
-        assert docs[0][0] == trust_root.resolve()
-
-    def test_returns_empty_when_trust_root_not_ancestor(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        child = tmp_path / "project" / "sub"
-        child.mkdir(parents=True)
-        trust_root = tmp_path / "other-root"
-        trust_root.mkdir()
-        monkeypatch.chdir(child)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-        monkeypatch.setattr(
-            trusted_folders_manager, "find_trust_root", lambda _: trust_root.resolve()
-        )
-        (tmp_path / "AGENTS.md").write_text("# Outside", encoding="utf-8")
-        (child / "AGENTS.md").write_text("# Child", encoding="utf-8")
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.load_project_docs() == []
-
     def test_ignores_empty_agents_md(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
-        monkeypatch.setattr(
-            trusted_folders_manager, "find_trust_root", lambda _: tmp_path.resolve()
-        )
         (tmp_path / "AGENTS.md").write_text("   \n  ", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
         assert mgr.load_project_docs() == []
@@ -365,26 +266,12 @@ class TestFindSubdirectoryAgentsMd:
         mgr = HarnessFilesManager(sources=("user",))
         assert mgr.find_subdirectory_agents_md(target) == []
 
-    def test_returns_empty_when_not_trusted(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "find_trust_root", lambda _: None)
-        sub = tmp_path / "sub"
-        sub.mkdir()
-        (sub / "AGENTS.md").write_text("# Sub", encoding="utf-8")
-        target = sub / "file.py"
-        target.write_text("", encoding="utf-8")
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.find_subdirectory_agents_md(target) == []
-
     def test_returns_empty_when_file_outside_cwd(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         cwd = tmp_path / "project"
         cwd.mkdir()
         monkeypatch.chdir(cwd)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         outside = tmp_path / "other" / "file.py"
         outside.parent.mkdir(parents=True)
         outside.write_text("", encoding="utf-8")
@@ -395,7 +282,6 @@ class TestFindSubdirectoryAgentsMd:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / "AGENTS.md").write_text("# Root", encoding="utf-8")
         target = tmp_path / "file.py"
         target.write_text("", encoding="utf-8")
@@ -407,7 +293,6 @@ class TestFindSubdirectoryAgentsMd:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         sub = tmp_path / "sub"
         sub.mkdir()
         (sub / "AGENTS.md").write_text("# Sub instructions", encoding="utf-8")
@@ -422,7 +307,6 @@ class TestFindSubdirectoryAgentsMd:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         outer = tmp_path / "a"
         inner = outer / "b"
         inner.mkdir(parents=True)
@@ -440,7 +324,6 @@ class TestFindSubdirectoryAgentsMd:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         outer = tmp_path / "a"
         inner = outer / "b"
         inner.mkdir(parents=True)
@@ -457,7 +340,6 @@ class TestFindSubdirectoryAgentsMd:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         sub = tmp_path / "sub"
         sub.mkdir()
         (sub / "AGENTS.md").write_text("   \n  ", encoding="utf-8")
@@ -472,7 +354,6 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         mgr = HarnessFilesManager(sources=("user", "project"))
         assert mgr.project_skills_dirs == []
 
@@ -480,7 +361,6 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         vibe_skills = tmp_path / ".vibe" / "skills"
         vibe_skills.mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -490,7 +370,6 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         agents_skills = tmp_path / ".agents" / "skills"
         agents_skills.mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -500,7 +379,6 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         vibe_skills = tmp_path / ".vibe" / "skills"
         agents_skills = tmp_path / ".agents" / "skills"
         vibe_skills.mkdir(parents=True)
@@ -512,7 +390,6 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe").mkdir()
         (tmp_path / ".vibe" / "skills").write_text("", encoding="utf-8")
         mgr = HarnessFilesManager(sources=("user", "project"))
@@ -522,27 +399,15 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         vibe_skills = tmp_path / ".vibe" / "skills"
         vibe_skills.mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user",))
         assert mgr.project_skills_dirs == []
 
-    def test_returns_empty_when_not_trusted(
+    def test_finds_skills_dirs_recursively(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: False)
-        vibe_skills = tmp_path / ".vibe" / "skills"
-        vibe_skills.mkdir(parents=True)
-        mgr = HarnessFilesManager(sources=("user", "project"))
-        assert mgr.project_skills_dirs == []
-
-    def test_finds_skills_dirs_recursively_in_trusted_folder(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe" / "skills").mkdir(parents=True)
         (tmp_path / "sub" / ".agents" / "skills").mkdir(parents=True)
         (tmp_path / "sub" / "deep" / ".vibe" / "skills").mkdir(parents=True)
@@ -557,7 +422,6 @@ class TestProjectSkillsDirs:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr(trusted_folders_manager, "is_trusted", lambda _: True)
         (tmp_path / ".vibe" / "skills").mkdir(parents=True)
         (tmp_path / "node_modules" / ".vibe" / "skills").mkdir(parents=True)
         mgr = HarnessFilesManager(sources=("user", "project"))

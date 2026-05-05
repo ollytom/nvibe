@@ -1,33 +1,12 @@
-$mistral_orange: #FF8205;
-
-* {
-    scrollbar-color: ansi_black;
-    scrollbar-color-hover: ansi_bright_black;
-    scrollbar-color-active: ansi_bright_black;
-    scrollbar-background: transparent;
-    scrollbar-background-hover: transparent;
-    scrollbar-background-active: transparent;
-    scrollbar-size: 1 1;
-}
-
-Screen {
-    background: transparent;
-}
-
 Horizontal {
     width: 100%;
     height: auto;
-}
-
-TextArea > .text-area--cursor {
-    color: ansi_default;
 }
 
 #chat {
     layout: stream;
     height: 1fr;
     width: 100%;
-    background: transparent;
     padding: 0;
     align-vertical: bottom;
 }
@@ -35,7 +14,6 @@ TextArea > .text-area--cursor {
 #loading-area {
     height: auto;
     width: 100%;
-    background: transparent;
     padding: 1 0 0 0;
     layout: horizontal;
     align: left middle;
@@ -51,14 +29,11 @@ TextArea > .text-area--cursor {
 #input-container {
     height: auto;
     width: 100%;
-    background: transparent;
 }
 
 #bottom-bar {
     height: auto;
     width: 100%;
-    background: transparent;
-    padding: 0;
     align: left middle;
     layout: horizontal;
 }
@@ -66,7 +41,6 @@ TextArea > .text-area--cursor {
 #spacer {
     width: 1fr;
     height: auto;
-    background: transparent;
 }
 
 #messages {
@@ -89,7 +63,6 @@ TextArea > .text-area--cursor {
     display: none;
     width: auto;
     height: auto;
-    color: ansi_default;
     background: $surface;
     border: solid ansi_bright_black;
     overflow-y: auto;
@@ -105,30 +78,8 @@ TextArea > .text-area--cursor {
 #input-box {
     height: auto;
     width: 100%;
-    background: transparent;
-    border: solid ansi_bright_black;
     border-title-align: right;
     padding: 0 1;
-
-    &.border-warning {
-        border: solid ansi_yellow;
-        border-title-color: ansi_yellow;
-    }
-
-    &.border-safe {
-        border: solid ansi_green;
-        border-title-color: ansi_green;
-    }
-
-    &.border-error {
-        border: solid ansi_red;
-        border-title-color: ansi_red;
-    }
-
-    &.border-remote {
-        border: solid $mistral_orange;
-        border-title-color: $mistral_orange;
-    }
 }
 
 #input-body {
@@ -137,9 +88,6 @@ TextArea > .text-area--cursor {
 
 #prompt {
     width: auto;
-    background: transparent;
-    color: $mistral_orange;
-    text-style: bold;
     padding: 0 1 0 0;
 }
 
@@ -148,53 +96,23 @@ TextArea > .text-area--cursor {
     height: auto;
     min-height: 3;
     max-height: 50vh;
-    background: transparent;
-    color: ansi_default;
     border: none;
     padding: 0;
-    scrollbar-visibility: hidden;
-
-}
-
-ToastRack {
-    align: left bottom;
-    padding: 0;
-    margin: 0 0 6 0;
 }
 
 Markdown {
-    color: ansi_default;
-
-    .code_inline {
-        color: ansi_green;
-        background: transparent;
-        text-style: bold;
-    }
-
     MarkdownFence {
         overflow-x: auto;
         scrollbar-size-horizontal: 1;
         max-width: 95%;
-        background: transparent;
 
         & > Label {
             padding: 0;
         }
     }
 
-    MarkdownTable {
-        background: transparent;
-    }
-
     MarkdownBlockQuote {
-        background: transparent;
         border-left: outer ansi_bright_black;
-    }
-
-    MarkdownBullet,
-    MarkdownBulletList,
-    MarkdownOrderedList {
-        color: ansi_default;
     }
 }
 
@@ -207,7 +125,6 @@ Markdown {
         .user-message-prompt,
         .user-message-content {
             opacity: 0.7;
-            text-style: italic;
         }
     }
 }
@@ -220,16 +137,12 @@ Markdown {
 .user-message-prompt {
     width: auto;
     height: 100%;
-    text-style: bold;
 }
 
 .user-message-content {
     width: 1fr;
     height: auto;
-    text-style: bold;
     padding-left: 1;
-    border-left: heavy $mistral_orange;
-    color: $mistral_orange;
 }
 
 .assistant-message {
@@ -278,7 +191,6 @@ Markdown {
     width: auto;
     height: auto;
     color: ansi_bright_black;
-    text-style: italic;
 }
 
 .reasoning-triangle {
@@ -291,13 +203,6 @@ Markdown {
     height: auto;
     padding: 0 0 0 2;
     margin: 0;
-    color: ansi_bright_black;
-    text-style: italic;
-
-    * {
-        color: ansi_bright_black;
-        text-style: italic;
-    }
 
     & > MarkdownBlock:last-child {
         margin-bottom: 0;
@@ -346,7 +251,6 @@ Markdown {
     height: auto;
     margin: 0;
     color: ansi_red;
-    text-style: bold;
 }
 
 .warning-content {
@@ -445,7 +349,6 @@ StatusMessage {
 .status-indicator-icon {
     width: auto;
     height: auto;
-    color: ansi_default;
     margin-right: 1;
 
     &.success {
@@ -460,7 +363,6 @@ StatusMessage {
 .status-indicator-text {
     width: 1fr;
     height: auto;
-    color: ansi_default;
 }
 
 .compact-message,
@@ -493,7 +395,6 @@ StatusMessage {
     margin-left: 0;
     padding: 0;
     background: transparent;
-    color: ansi_default;
 
     &.error-text {
         color: ansi_red;
@@ -528,7 +429,6 @@ StatusMessage {
 .tool-result-widget {
     width: 100%;
     height: auto;
-    color: ansi_default;
 }
 
 .tool-result-widget Static {
@@ -574,7 +474,6 @@ StatusMessage {
 .diff-header {
     height: auto;
     color: ansi_bright_black;
-    text-style: bold;
 }
 
 .diff-removed {
@@ -605,7 +504,6 @@ StatusMessage {
 
 .todo-pending {
     height: auto;
-    color: ansi_default;
 }
 
 .todo-in_progress {
@@ -671,7 +569,6 @@ StatusMessage {
     background: transparent;
     border: none;
     color: ansi_yellow;
-    text-style: bold;
     pointer: pointer;
     padding: 1;
 }
@@ -696,7 +593,6 @@ StatusMessage {
 
 .settings-title {
     height: auto;
-    text-style: bold;
     color: ansi_blue;
 }
 
@@ -710,39 +606,8 @@ StatusMessage {
     border: none;
 }
 
-#connectorauth-detail {
-    margin: 1 0;
-}
-
 .settings-help {
     height: auto;
-    color: ansi_bright_black;
-}
-
-#proxysetup-app {
-    width: 100%;
-    height: auto;
-    background: transparent;
-    border: solid ansi_bright_black;
-    padding: 0 1;
-    margin: 0;
-}
-
-#proxysetup-content {
-    width: 100%;
-    height: auto;
-}
-
-.proxy-label-line {
-    height: auto;
-}
-
-.proxy-input {
-    width: 100%;
-    height: auto;
-    border: none;
-    border-left: wide ansi_bright_black;
-    padding: 0 0 0 1;
 }
 
 #approval-app {
@@ -774,7 +639,6 @@ StatusMessage {
 
 .approval-title {
     height: auto;
-    text-style: bold;
     color: ansi_yellow;
 }
 
@@ -796,18 +660,15 @@ StatusMessage {
 
 .approval-option {
     height: auto;
-    color: ansi_default;
 }
 
 .approval-cursor-selected {
     &.approval-option-yes {
         color: ansi_green;
-        text-style: bold;
     }
 
     &.approval-option-no {
         color: ansi_red;
-        text-style: bold;
     }
 }
 
@@ -828,12 +689,10 @@ StatusMessage {
 
 .approval-description {
     height: auto;
-    color: ansi_default;
 }
 
 .code-block {
     height: auto;
-    color: ansi_default;
     background: transparent;
     padding: 1;
 }
@@ -865,19 +724,16 @@ StatusMessage {
 
 .question-title {
     height: auto;
-    text-style: bold;
     color: ansi_blue;
     margin-bottom: 1;
 }
 
 .question-option {
     height: auto;
-    color: ansi_default;
 }
 
 .question-option-selected {
     color: ansi_blue;
-    text-style: bold;
 }
 
 .question-other-row {
@@ -888,7 +744,6 @@ StatusMessage {
 .question-other-prefix {
     width: auto;
     height: auto;
-    color: ansi_default;
 }
 
 .question-other-input {
@@ -907,7 +762,6 @@ StatusMessage {
 
 .question-submit {
     height: auto;
-    color: ansi_default;
     margin-top: 1;
 }
 
@@ -930,7 +784,6 @@ StatusMessage {
 .question-content-preview-text {
     width: 100%;
     height: auto;
-    color: ansi_default;
     padding: 0;
     margin: 0;
 
@@ -957,19 +810,12 @@ StatusMessage {
     height: auto;
 }
 
-#banner-brand {
-    color: $mistral_orange;
-    text-style: bold;
-    width: auto;
-}
-
 .banner-spacer {
     width: 1;
     color: transparent;
 }
 
 .banner-meta {
-    color: ansi_default;
     width: auto;
 }
 
@@ -989,43 +835,6 @@ StatusMessage {
 .banner-cmd {
     color: ansi_cyan;
     width: auto;
-}
-
-.whats-new-message {
-    border-left: heavy $mistral_orange;
-    margin-bottom: 1;
-
-    Markdown {
-        padding: 0 0 0 1;
-        margin: 0;
-
-        & > MarkdownBlock:first-child {
-            margin-top: 0;
-        }
-
-        & > MarkdownBlock:last-child {
-            margin-bottom: 0;
-        }
-
-        MarkdownBulletList,
-        MarkdownOrderedList {
-            margin-top: 1;
-            margin-bottom: 1;
-        }
-
-        MarkdownH1 {
-            content-align: left middle;
-        }
-    }
-
-    link-style: none;
-    link-background-hover: transparent;
-    link-style-hover: underline;
-    link-color-hover: $mistral_orange;
-}
-
-.whats-new-message.after-history {
-    margin-top: 1;
 }
 
 #sessionpicker-app {
@@ -1060,8 +869,6 @@ StatusMessage {
     color: ansi_bright_black;
     margin-top: 1;
 }
-
-
 
 #modelpicker-app {
     width: 100%;
@@ -1139,101 +946,4 @@ StatusMessage {
     height: auto;
     color: ansi_bright_black;
     margin-top: 1;
-}
-
-
-.user-message.rewind-selected {
-    .user-message-content {
-        text-style: bold reverse;
-    }
-}
-
-#rewind-app {
-    width: 100%;
-    height: auto;
-    background: transparent;
-    border: solid ansi_bright_black;
-    padding: 0 1;
-    margin: 0;
-}
-
-#rewind-content {
-    width: 100%;
-    height: auto;
-}
-
-.rewind-title {
-    height: auto;
-    text-style: bold;
-    color: ansi_blue;
-}
-
-.rewind-option {
-    height: auto;
-    color: ansi_default;
-}
-
-.rewind-cursor-selected {
-    color: ansi_blue;
-    text-style: bold;
-}
-
-.rewind-option-unselected {
-    color: ansi_default;
-}
-
-.rewind-help {
-    height: auto;
-    color: ansi_bright_black;
-}
-
-
-.hook-system-message {
-    height: auto;
-    width: 100%;
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-.hook-run-container {
-    height: auto;
-    width: 100%;
-    margin-top: 1;
-}
-
-.hook-run-container:empty {
-    display: none;
-}
-
-.hook-system-container {
-    width: 100%;
-    height: auto;
-    margin: 0;
-    padding: 0;
-}
-
-.hook-system-icon {
-    width: auto;
-    height: 1;
-    padding: 0 1 0 0;
-}
-
-.hook-system-content {
-    width: 1fr;
-    height: auto;
-    max-height: 3;
-    overflow: hidden;
-    color: ansi_bright_black;
-}
-
-.hook-severity-ok .hook-system-icon {
-    color: ansi_green;
-}
-
-.hook-severity-warning .hook-system-icon {
-    color: ansi_yellow;
-}
-
-.hook-severity-error .hook-system-icon {
-    color: ansi_red;
 }

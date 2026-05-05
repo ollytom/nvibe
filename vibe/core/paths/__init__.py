@@ -14,7 +14,6 @@ from vibe.core.paths._vibe_home import (
     LOG_FILE,
     PLANS_DIR,
     SESSION_LOG_DIR,
-    TRUSTED_FOLDERS_FILE,
     VIBE_HOME,
     GlobalPath,
 )
@@ -30,7 +29,6 @@ __all__ = [
     "LOG_FILE",
     "PLANS_DIR",
     "SESSION_LOG_DIR",
-    "TRUSTED_FOLDERS_FILE",
     "VIBE_HOME",
     "WALK_MAX_DEPTH",
     "ConfigWalkResult",
