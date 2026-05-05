@@ -75,7 +75,6 @@ from vibe.core.agent_loop import AgentLoop
 from vibe.core.agents import AgentProfile
 from vibe.core.autocompletion.path_prompt_adapter import render_path_prompt
 from vibe.core.config import VibeConfig
-from vibe.core.log_reader import LogReader
 from vibe.core.paths import HISTORY_FILE
 from vibe.core.rewind import RewindError
 from vibe.core.session.resume_sessions import (
@@ -293,7 +292,6 @@ class VibeApp(App):  # noqa: PLR0904
         self._cached_messages_area: Widget | None = None
         self._cached_chat: ChatScroll | None = None
         self._cached_loading_area: Widget | None = None
-        self._log_reader = LogReader()
 
         self._switch_agent_generation = 0
 
@@ -1273,7 +1271,6 @@ Cost: ${stats.session_cost:.4f}
         return short_session_id(self.agent_loop.session_logger.session_id)
 
     async def _exit_app(self, **kwargs: Any) -> None:
-        self._log_reader.shutdown()
         self.exit(result=self._get_session_resume_info())
 
     async def _switch_from_input(self, widget: Widget, scroll: bool = False) -> None:
@@ -1831,7 +1828,6 @@ Cost: ${stats.session_cost:.4f}
         if self._agent_task and not self._agent_task.done():
             self._agent_task.cancel()
 
-        self._log_reader.shutdown()
         self.exit(result=self._get_session_resume_info())
 
     def action_scroll_chat_up(self) -> None:

@@ -162,14 +162,6 @@ vibe "Refactor the main function in cli/main.py to be more modular."
 
 **Note**: The `--auto-approve` flag automatically approves all tool executions without prompting. In interactive mode, you can also toggle auto-approve on/off using `Shift+Tab`.
 
-### Trust Folder System
-
-Vibe includes a trust folder system to ensure you only run the agent in directories you trust. When you first run Vibe in a new directory which contains a `.vibe` subfolder, it may ask you to confirm whether you trust the folder.
-
-Trusted folders are remembered for future sessions. You can manage trusted folders through its configuration file `~/.vibe/trusted_folders.toml`.
-
-This safety feature helps prevent accidental execution in sensitive directories.
-
 ### Programmatic Mode
 
 You can run Vibe non-interactively by piping input or using the `--prompt` flag. This is useful for scripting.
@@ -265,8 +257,8 @@ This skill helps analyze code quality and suggest improvements.
 Vibe discovers skills from multiple locations:
 
 1. **Custom paths**: Configured in `config.toml` via `skill_paths`
-2. **Standard Agent Skills path** (project root, trusted folders only): `.agents/skills/` — [Agent Skills](https://agentskills.io) standard
-3. **Local project skills** (project root, trusted folders only): `.vibe/skills/` in your project
+2. **Standard Agent Skills path** (project root): `.agents/skills/` — [Agent Skills](https://agentskills.io) standard
+3. **Local project skills** (project root): `.vibe/skills/` in your project
 4. **Global skills directory**: `~/.vibe/skills/`
 
 ```toml
